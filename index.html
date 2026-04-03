@@ -3,633 +3,413 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Personal Media Manager</title>
-    <!-- Google Identity Services -->
+    <title>My Media Tool</title>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <!-- Google API Client Library -->
     <script src="https://apis.google.com/js/api.js"></script>
-    <!-- Tailwind CSS for rapid styling -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Font Awesome for Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
     <style>
-        /* Trendy Glassmorphism & Dark Mode Theme */
         :root {
-            --bg-color: #0f172a;
-            --glass-bg: rgba(30, 41, 59, 0.7);
-            --glass-border: rgba(255, 255, 255, 0.1);
-            --accent-neon: #8b5cf6;
-            --accent-glow: 0 0 15px rgba(139, 92, 246, 0.5);
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
+            --bg-color: #f4f4f9;
+            --sidebar-color: #ffffff;
+            --accent-color: #ff0000;
+            --text-color: #333;
+            --item-hover: #f0f0f0;
+            --card-bg: #fff;
+        }
+
+        /* Music Mode Theme Variables */
+        .music-mode {
+            --bg-color: #0f0f0f;
+            --sidebar-color: #1a1a1a;
+            --accent-color: #1db954; /* Spotify-esque green */
+            --text-color: #ececec;
+            --item-hover: #2a2a2a;
+            --card-bg: #222;
         }
 
         body {
-            background-color: var(--bg-color);
-            background-image: radial-gradient(circle at top right, #1e1b4b, #0f172a);
-            color: var(--text-main);
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
-
-        .glass-panel {
-            background: var(--glass-bg);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid var(--glass-border);
-            border-radius: 1rem;
-        }
-
-        .neon-btn {
-            background: transparent;
-            border: 1px solid var(--accent-neon);
-            color: var(--accent-neon);
+            margin: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
             transition: all 0.3s ease;
         }
 
-        .neon-btn:hover, .neon-btn.active {
-            background: var(--accent-neon);
+        /* Sidebar */
+        #sidebar {
+            width: 300px;
+            background-color: var(--sidebar-color);
+            border-right: 1px solid #ddd;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s ease;
+        }
+
+        .header-box {
+            padding: 20px;
+            border-bottom: 1px solid #ddd;
+            text-align: center;
+        }
+
+        #auth-btn {
+            background-color: var(--accent-color);
             color: white;
-            box-shadow: var(--accent-glow);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
         }
 
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
-
-        /* Music Mode Transitions */
-        #video-container { transition: all 0.5s ease; }
-        .music-mode #video-container { 
-            height: 0; 
-            opacity: 0; 
-            overflow: hidden; 
-            padding: 0;
-            margin: 0;
+        /* Search Area */
+        .search-container {
+            padding: 15px;
+            display: flex;
+            gap: 10px;
         }
-        
-        .music-mode-art {
-            display: none;
-            width: 100%;
-            aspect-ratio: 16/9;
-            background-size: cover;
-            background-position: center;
-            border-radius: 0.5rem;
-            box-shadow: var(--accent-glow);
-        }
-        
-        .music-mode .music-mode-art { display: block; }
 
-        /* Error Log Console */
-        #error-log-container {
-            max-height: 150px;
+        #search-input {
+            flex-grow: 1;
+            padding: 8px 12px;
+            border-radius: 20px;
+            border: 1px solid #ccc;
+            outline: none;
+            background: var(--bg-color);
+            color: var(--text-color);
+        }
+
+        /* Categories */
+        .category-tabs {
+            display: flex;
+            justify-content: space-around;
+            padding: 10px;
+            background: var(--item-hover);
+        }
+
+        .tab {
+            cursor: pointer;
+            padding: 5px 15px;
+            border-radius: 15px;
+            font-size: 0.9em;
+        }
+
+        .tab.active {
+            background-color: var(--accent-color);
+            color: white;
+        }
+
+        /* Content List */
+        #content-list {
+            flex-grow: 1;
             overflow-y: auto;
-            font-family: monospace;
-            font-size: 0.85rem;
+            padding: 10px;
         }
-        .log-entry { border-bottom: 1px solid rgba(255,255,255,0.05); padding: 4px 0; }
-        .log-error { color: #ef4444; }
-        .log-info { color: #3b82f6; }
-        .log-success { color: #10b981; }
+
+        .item-card {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            margin-bottom: 8px;
+            background: var(--card-bg);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .item-card:hover {
+            background: var(--item-hover);
+        }
+
+        .item-card img {
+            width: 80px;
+            height: 45px;
+            object-fit: cover;
+            border-radius: 4px;
+            margin-right: 12px;
+        }
+
+        .item-info {
+            font-size: 0.85em;
+            font-weight: 500;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* Main Content */
+        #main {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            background-color: var(--bg-color);
+        }
+
+        #player-container {
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            background: #000;
+        }
+
+        #system-console {
+            height: 150px;
+            background: #222;
+            color: #0f0;
+            font-family: monospace;
+            padding: 10px;
+            font-size: 12px;
+            overflow-y: auto;
+            border-top: 2px solid var(--accent-color);
+        }
+
+        .log-entry { margin-bottom: 4px; }
+        .log-err { color: #f55; }
+        .log-success { color: #5f5; }
+
+        @media (max-width: 768px) {
+            body { flex-direction: column; }
+            #sidebar { width: 100%; height: 40%; border-right: none; border-top: 1px solid #ddd; }
+            #player-container { height: auto; }
+        }
     </style>
 </head>
-<body class="p-4 md:p-8 flex flex-col gap-6">
+<body>
 
-    <!-- SETUP INSTRUCTIONS (Delete after configuring) -->
-    <div id="setup-warning" class="glass-panel p-6 border-l-4 border-yellow-500 mb-4">
-        <h2 class="text-xl font-bold text-yellow-500 mb-2">Developer Setup Required</h2>
-        <p class="text-sm text-gray-300 mb-2">To make this app functional, you must insert your Google Cloud credentials into the JavaScript code.</p>
-        <ol class="list-decimal ml-5 text-sm text-gray-400 space-y-1">
-            <li>Open this HTML file in a text editor.</li>
-            <li>Scroll down to the <code>&lt;script&gt;</code> section.</li>
-            <li>Locate the <code>CLIENT_ID</code> and <code>API_KEY</code> variables.</li>
-            <li>Paste your credentials from the Google Cloud Console.</li>
-        </ol>
-    </div>
-
-    <!-- Header / Auth -->
-    <header class="glass-panel p-4 flex justify-between items-center">
-        <h1 class="text-2xl font-bold tracking-wider flex items-center gap-3">
-            <i class="fa-brands fa-youtube text-red-500"></i> Media Manager
-        </h1>
-        <div id="auth-section">
-            <button id="login-btn" class="neon-btn px-6 py-2 rounded-full font-semibold flex items-center gap-2">
-                <i class="fa-solid fa-user"></i> Connect YouTube
-            </button>
-            <div id="user-profile" class="hidden flex items-center gap-4">
-                <img id="user-avatar" src="" alt="Avatar" class="w-10 h-10 rounded-full border-2 border-purple-500">
-                <button id="logout-btn" class="text-sm text-gray-400 hover:text-white transition">Sign Out</button>
-            </div>
+    <div id="sidebar">
+        <div class="header-box">
+            <h3 style="margin:0 0 10px 0;">Media Manager</h3>
+            <button id="auth-btn" onclick="handleAuthClick()">Connect YouTube</button>
         </div>
-    </header>
 
-    <!-- Main Workspace (Hidden until logged in) -->
-    <main id="main-workspace" class="hidden grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1">
-        
-        <!-- Sidebar: Playlists -->
-        <aside class="glass-panel p-4 flex flex-col h-[60vh] lg:h-[75vh]">
-            <h2 class="text-lg font-semibold mb-4 border-b border-gray-700 pb-2"><i class="fa-solid fa-list-ul mr-2"></i> Your Library</h2>
-            <div id="playlists-container" class="flex-1 overflow-y-auto space-y-2 pr-2">
-                <!-- Playlists injected here -->
-            </div>
-        </aside>
+        <div class="category-tabs">
+            <div id="tab-video" class="tab active" onclick="setCategory('video')">Video</div>
+            <div id="tab-music" class="tab" onclick="setCategory('music')">Music</div>
+        </div>
 
-        <!-- Player & Controls -->
-        <section class="lg:col-span-2 glass-panel p-4 flex flex-col">
-            
-            <!-- Category Toggle -->
-            <div class="flex justify-between items-center mb-4 bg-slate-800 p-2 rounded-lg">
-                <div class="flex gap-2">
-                    <button id="mode-video" class="neon-btn active px-4 py-1 rounded-md text-sm"><i class="fa-solid fa-video mr-1"></i> Video Mode</button>
-                    <button id="mode-music" class="neon-btn px-4 py-1 rounded-md text-sm"><i class="fa-solid fa-headphones mr-1"></i> Music Mode</button>
-                </div>
-            </div>
+        <div class="search-container">
+            <input type="text" id="search-input" placeholder="Search YouTube..." onkeypress="handleSearch(event)">
+        </div>
 
-            <!-- Media Player -->
-            <div id="player-wrapper" class="w-full bg-black rounded-lg overflow-hidden relative shadow-lg aspect-video mb-4">
-                <div id="youtube-player" class="w-full h-full"></div>
-                <div id="music-art" class="music-mode-art absolute top-0 left-0"></div>
-            </div>
-
-            <!-- Now Playing Info -->
-            <div class="mb-4 text-center">
-                <h3 id="now-playing-title" class="text-xl font-bold text-white truncate">No Media Selected</h3>
-                <p id="now-playing-channel" class="text-sm text-gray-400">---</p>
-            </div>
-
-            <!-- Custom Controls -->
-            <div class="flex flex-col items-center gap-4 mt-auto">
-                <div class="flex items-center gap-6">
-                    <button id="ctrl-shuffle" class="text-gray-400 hover:text-white text-xl transition"><i class="fa-solid fa-shuffle"></i></button>
-                    <button id="ctrl-prev" class="text-white hover:text-purple-400 text-2xl transition"><i class="fa-solid fa-backward-step"></i></button>
-                    <button id="ctrl-rw" class="text-white hover:text-purple-400 text-2xl transition"><i class="fa-solid fa-rotate-left"></i><span class="text-xs block -mt-1">-5s</span></button>
-                    
-                    <button id="ctrl-playpause" class="w-14 h-14 rounded-full bg-purple-600 hover:bg-purple-500 text-white text-2xl flex items-center justify-center shadow-lg transition">
-                        <i class="fa-solid fa-play"></i>
-                    </button>
-                    
-                    <button id="ctrl-ff" class="text-white hover:text-purple-400 text-2xl transition"><i class="fa-solid fa-rotate-right"></i><span class="text-xs block -mt-1">+5s</span></button>
-                    <button id="ctrl-next" class="text-white hover:text-purple-400 text-2xl transition"><i class="fa-solid fa-forward-step"></i></button>
-                    <button id="ctrl-loop" class="text-gray-400 hover:text-white text-xl transition"><i class="fa-solid fa-repeat"></i></button>
-                </div>
-            </div>
-
-        </section>
-    </main>
-
-    <!-- Playlist Items Modal (Overlay) -->
-    <div id="items-modal" class="hidden fixed inset-0 bg-black bg-opacity-80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div class="glass-panel w-full max-w-2xl h-[80vh] flex flex-col">
-            <div class="p-4 border-b border-gray-700 flex justify-between items-center">
-                <h3 id="modal-title" class="text-xl font-bold">Playlist Items</h3>
-                <button id="close-modal" class="text-gray-400 hover:text-white text-2xl">&times;</button>
-            </div>
-            <div id="modal-items-list" class="flex-1 overflow-y-auto p-4 space-y-3">
-                <!-- Items injected here -->
-            </div>
+        <div id="content-list">
+            <!-- Playlists or Search Results will appear here -->
+            <div style="padding:20px; text-align:center; opacity:0.6;">Connect to load content</div>
         </div>
     </div>
 
-    <!-- Developer Error Log Console -->
-    <footer class="glass-panel p-4 mt-auto">
-        <div class="flex justify-between items-center mb-2 border-b border-gray-700 pb-1">
-            <span class="text-sm font-semibold text-gray-400"><i class="fa-solid fa-terminal mr-2"></i>System Console</span>
-            <button id="clear-log" class="text-xs text-gray-500 hover:text-white">Clear</button>
+    <div id="main">
+        <div id="player-container">
+            <div id="player"></div>
         </div>
-        <div id="error-log-container" class="flex flex-col-reverse">
-            <div class="log-entry log-info">> System initialized. Awaiting credentials.</div>
+        <div id="system-console">
+            <div class="log-entry">System ready...</div>
         </div>
-    </footer>
+    </div>
 
     <script>
-        /** * ==========================================
-         * DEVELOPER CONFIGURATION
-         * ==========================================
-         * Paste your Google Cloud Client ID and API Key below.
-         */
+        // REPLACE THESE WITH YOUR WORKING CREDENTIALS
         const CLIENT_ID = '548832992786-1lb8pc13nrubj10if74sfnc6nipob1um.apps.googleusercontent.com';
         const API_KEY = 'AIzaSyBMelqr_i2dzuGqSab8D4_PGtw5-WctgsM';
-        const DISCOVERY_DOCS = ['https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest'];
-        const SCOPES = 'https://www.googleapis.com/auth/youtube.readonly';
+        
+        const DISCOVERY_DOC = "https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest";
+        const SCOPES = "https://www.googleapis.com/auth/youtube.readonly";
 
-        /**
-         * Application State
-         */
         let tokenClient;
-        let accessToken = null;
+        let gapiInited = false;
+        let gisInited = false;
         let player;
-        let currentPlaylistItems = [];
-        let currentPlayingIndex = -1;
-        let isShuffle = false;
-        let isLoop = false;
-        let playHistory = [];
+        let currentCategory = 'video'; // 'video' or 'music'
 
-        /**
-         * Logger Utility
-         */
-        const consoleLog = document.getElementById('error-log-container');
-        function log(message, type = 'info') {
-            const div = document.createElement('div');
-            div.className = `log-entry log-${type}`;
-            const time = new Date().toLocaleTimeString();
-            div.textContent = `[${time}] > ${message}`;
-            consoleLog.prepend(div);
-            // Hide setup warning if developer starts using the console effectively
-            if (message.includes('API Loaded') && CLIENT_ID !== 'YOUR_CLIENT_ID_HERE.apps.googleusercontent.com') {
-                document.getElementById('setup-warning').style.display = 'none';
-            }
+        function log(msg, type = '') {
+            const consoleEl = document.getElementById('system-console');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type ? 'log-' + type : ''}`;
+            entry.innerText = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            consoleEl.appendChild(entry);
+            consoleEl.scrollTop = consoleEl.scrollHeight;
         }
 
-        /**
-         * Initialization & Auth
-         */
-        function gapiLoaded() {
+        // Initialize Google APIs
+        window.onload = function() {
             gapi.load('client', initializeGapiClient);
-        }
+            tokenClient = google.accounts.oauth2.initTokenClient({
+                client_id: CLIENT_ID,
+                scope: SCOPES,
+                callback: '', // defined later
+            });
+            gisInited = true;
+            log("Google Identity Services Loaded");
+        };
 
         async function initializeGapiClient() {
             try {
                 await gapi.client.init({
                     apiKey: API_KEY,
-                    discoveryDocs: DISCOVERY_DOCS,
+                    discoveryDocs: [DISCOVERY_DOC],
                 });
-                log('YouTube API Client Initialized.', 'success');
+                gapiInited = true;
+                log("YouTube API Client Initialized", "success");
             } catch (err) {
-                log(`API Init Error: ${JSON.stringify(err)}`, 'error');
+                log("API Init Error: " + JSON.stringify(err), "err");
             }
         }
 
-        function gisLoaded() {
-            tokenClient = google.accounts.oauth2.initTokenClient({
-                client_id: CLIENT_ID,
-                scope: SCOPES,
-                callback: (tokenResponse) => {
-                    if (tokenResponse && tokenResponse.access_token) {
-                        accessToken = tokenResponse.access_token;
-                        log('Authentication successful.', 'success');
-                        document.getElementById('auth-section').querySelector('#login-btn').classList.add('hidden');
-                        document.getElementById('user-profile').classList.remove('hidden');
-                        document.getElementById('main-workspace').classList.remove('hidden');
-                        fetchPlaylists();
-                    }
-                },
-            });
-            log('Google Identity Services Loaded.', 'info');
+        function handleAuthClick() {
+            tokenClient.callback = async (resp) => {
+                if (resp.error !== undefined) throw (resp);
+                log("Authentication Successful", "success");
+                document.getElementById('auth-btn').innerText = "Account Connected";
+                loadUserPlaylists();
+            };
+
+            if (gapi.client.getToken() === null) {
+                tokenClient.requestAccessToken({prompt: 'consent'});
+            } else {
+                tokenClient.requestAccessToken({prompt: ''});
+            }
         }
 
-        document.getElementById('login-btn').addEventListener('click', () => {
-            if (CLIENT_ID.includes('YOUR_CLIENT_ID')) {
-                log('Cannot login: Client ID is missing. Check setup instructions.', 'error');
-                return;
+        function setCategory(cat) {
+            currentCategory = cat;
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.getElementById(`tab-${cat}`).classList.add('active');
+            
+            if (cat === 'music') {
+                document.body.classList.add('music-mode');
+                log("Switched to Music Mode (Music Filter Active)");
+            } else {
+                document.body.classList.remove('music-mode');
+                log("Switched to Video Mode");
             }
-            tokenClient.requestAccessToken({prompt: 'consent'});
-        });
+            // If search is active, re-search with new category filter
+            const query = document.getElementById('search-input').value;
+            if (query) performGlobalSearch(query);
+        }
 
-        document.getElementById('logout-btn').addEventListener('click', () => {
-            if (accessToken) {
-                google.accounts.oauth2.revoke(accessToken, () => {
-                    log('Access token revoked.', 'info');
-                    location.reload();
-                });
-            }
-        });
-
-        /**
-         * YouTube Data Fetching
-         */
-        async function fetchPlaylists() {
+        async function loadUserPlaylists() {
             try {
-                log('Fetching user playlists...', 'info');
-                
-                // Double-Check Logic: Ensure client is loaded
-                if (!gapi.client.youtube) throw new Error("YouTube client not loaded.");
-
                 const response = await gapi.client.youtube.playlists.list({
                     part: 'snippet,contentDetails',
                     mine: true,
-                    maxResults: 50
+                    maxResults: 25
                 });
-
-                // Double-Check Logic: Validate Response
-                if (!response || !response.result || !response.result.items) {
-                    throw new Error("Invalid API response format.");
-                }
-
-                const playlists = response.result.items;
-                renderPlaylists(playlists);
-                log(`Found ${playlists.length} playlists.`, 'success');
-                
+                displayItems(response.result.items, 'playlist');
             } catch (err) {
-                log(`Fetch Playlists Error: ${err.message || JSON.stringify(err)}`, 'error');
+                log("Error loading playlists: " + err.message, "err");
             }
         }
 
-        function renderPlaylists(playlists) {
-            const container = document.getElementById('playlists-container');
-            container.innerHTML = '';
-            
-            // Note: Direct "Watch Later" API access is deprecated by YouTube. 
-            // Standard playlists are shown instead.
-
-            playlists.forEach(pl => {
-                const title = pl.snippet.title;
-                const thumb = pl.snippet.thumbnails?.default?.url || 'https://via.placeholder.com/120x90?text=No+Thumb';
-                const count = pl.contentDetails.itemCount;
-                
-                const div = document.createElement('div');
-                div.className = 'flex items-center gap-3 p-2 rounded-lg hover:bg-slate-700 cursor-pointer transition';
-                div.innerHTML = `
-                    <img src="${thumb}" class="w-16 h-12 object-cover rounded shadow">
-                    <div class="flex-1 min-w-0">
-                        <h4 class="text-sm font-semibold truncate text-white">${title}</h4>
-                        <p class="text-xs text-gray-400">${count} items</p>
-                    </div>
-                `;
-                div.onclick = () => fetchPlaylistItems(pl.id, title);
-                container.appendChild(div);
-            });
-        }
-
-        async function fetchPlaylistItems(playlistId, playlistTitle) {
-            try {
-                log(`Fetching items for playlist: ${playlistTitle}`, 'info');
-                let items = [];
-                let nextPageToken = '';
-
-                // Fetch up to 100 items for this example (2 pages)
-                do {
-                    const response = await gapi.client.youtube.playlistItems.list({
-                        part: 'snippet,contentDetails',
-                        playlistId: playlistId,
-                        maxResults: 50,
-                        pageToken: nextPageToken
-                    });
-                    
-                    if (response.result.items) {
-                        items = items.concat(response.result.items);
-                    }
-                    nextPageToken = response.result.nextPageToken;
-                } while (nextPageToken && items.length < 100);
-
-                // Filter out private/deleted videos that lack titles
-                currentPlaylistItems = items.filter(item => item.snippet.title !== 'Private video' && item.snippet.title !== 'Deleted video');
-                
-                log(`Loaded ${currentPlaylistItems.length} valid items.`, 'success');
-                showPlaylistModal(playlistTitle);
-                
-            } catch (err) {
-                log(`Fetch Items Error: ${err.message || JSON.stringify(err)}`, 'error');
-            }
-        }
-
-        function showPlaylistModal(title) {
-            document.getElementById('modal-title').textContent = title;
-            const list = document.getElementById('modal-items-list');
+        function displayItems(items, type) {
+            const list = document.getElementById('content-list');
             list.innerHTML = '';
 
-            currentPlaylistItems.forEach((item, index) => {
-                const vTitle = item.snippet.title;
-                const channel = item.snippet.videoOwnerChannelTitle || 'Unknown';
-                const thumb = item.snippet.thumbnails?.default?.url || 'https://via.placeholder.com/120x90?text=No+Thumb';
-
-                const div = document.createElement('div');
-                div.className = 'flex items-center gap-4 p-3 bg-slate-800 rounded-lg hover:bg-slate-700 cursor-pointer transition';
-                div.innerHTML = `
-                    <span class="text-gray-500 w-4 text-right">${index + 1}</span>
-                    <img src="${thumb}" class="w-20 h-14 object-cover rounded shadow">
-                    <div class="flex-1 min-w-0">
-                        <h4 class="text-sm font-semibold truncate text-white">${vTitle}</h4>
-                        <p class="text-xs text-gray-400 truncate">${channel}</p>
-                    </div>
-                    <i class="fa-solid fa-play text-purple-500 opacity-0 group-hover:opacity-100 transition"></i>
-                `;
-                div.onclick = () => {
-                    document.getElementById('items-modal').classList.add('hidden');
-                    playVideo(index);
-                };
-                list.appendChild(div);
-            });
-
-            document.getElementById('items-modal').classList.remove('hidden');
-        }
-
-        document.getElementById('close-modal').addEventListener('click', () => {
-            document.getElementById('items-modal').classList.add('hidden');
-        });
-
-        /**
-         * YouTube Player API & Controls
-         */
-        // This function is automatically called by the YT script when ready
-        function onYouTubeIframeAPIReady() {
-            log('YouTube IFrame Player Ready.', 'info');
-            player = new YT.Player('youtube-player', {
-                height: '100%',
-                width: '100%',
-                playerVars: {
-                    'playsinline': 1,
-                    'controls': 0, // We use custom controls
-                    'disablekb': 1,
-                    'fs': 0,
-                    'rel': 0
-                },
-                events: {
-                    'onReady': onPlayerReady,
-                    'onStateChange': onPlayerStateChange,
-                    'onError': onPlayerError
-                }
-            });
-        }
-
-        function onPlayerReady(event) {
-            log('Player module initialized.', 'success');
-        }
-
-        function onPlayerStateChange(event) {
-            const playBtn = document.getElementById('ctrl-playpause');
-            if (event.data == YT.PlayerState.PLAYING) {
-                playBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
-                updateMediaSessionState('playing');
-            } else if (event.data == YT.PlayerState.PAUSED) {
-                playBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
-                updateMediaSessionState('paused');
-            } else if (event.data == YT.PlayerState.ENDED) {
-                playNext();
-            }
-        }
-
-        function onPlayerError(event) {
-            log(`Player Error Code: ${event.data}. Video might be restricted. Skipping to next.`, 'error');
-            setTimeout(playNext, 2000);
-        }
-
-        function playVideo(index) {
-            if (!currentPlaylistItems || currentPlaylistItems.length === 0) return;
-            
-            currentPlayingIndex = index;
-            const item = currentPlaylistItems[index];
-            const videoId = item.contentDetails.videoId;
-            const title = item.snippet.title;
-            const channel = item.snippet.videoOwnerChannelTitle;
-            const thumbUrl = item.snippet.thumbnails?.high?.url || item.snippet.thumbnails?.default?.url;
-
-            document.getElementById('now-playing-title').textContent = title;
-            document.getElementById('now-playing-channel').textContent = channel;
-            
-            // Update Background Art for Music Mode
-            const artEl = document.getElementById('music-art');
-            artEl.style.backgroundImage = `url('${thumbUrl}')`;
-
-            log(`Now Playing: ${title}`, 'info');
-
-            if (player && player.loadVideoById) {
-                player.loadVideoById(videoId);
-                setupMediaSession(title, channel, thumbUrl);
-            } else {
-                log('Player not ready to load video.', 'error');
-            }
-        }
-
-        /**
-         * Media Session API (Background Playback)
-         */
-        function setupMediaSession(title, artist, artworkUrl) {
-            if ('mediaSession' in navigator) {
-                navigator.mediaSession.metadata = new MediaMetadata({
-                    title: title,
-                    artist: artist,
-                    album: 'YouTube Media Manager',
-                    artwork: [
-                        { src: artworkUrl, sizes: '512x512', type: 'image/jpeg' }
-                    ]
-                });
-
-                navigator.mediaSession.setActionHandler('play', () => player.playVideo());
-                navigator.mediaSession.setActionHandler('pause', () => player.pauseVideo());
-                navigator.mediaSession.setActionHandler('seekbackward', () => player.seekTo(player.getCurrentTime() - 5));
-                navigator.mediaSession.setActionHandler('seekforward', () => player.seekTo(player.getCurrentTime() + 5));
-                navigator.mediaSession.setActionHandler('previoustrack', playPrev);
-                navigator.mediaSession.setActionHandler('nexttrack', playNext);
-            }
-        }
-
-        function updateMediaSessionState(state) {
-            if ('mediaSession' in navigator) {
-                navigator.mediaSession.playbackState = state;
-            }
-        }
-
-        /**
-         * Custom Controls Logic
-         */
-        document.getElementById('ctrl-playpause').addEventListener('click', () => {
-            if (!player || !player.getPlayerState) return;
-            const state = player.getPlayerState();
-            if (state === YT.PlayerState.PLAYING) {
-                player.pauseVideo();
-            } else {
-                player.playVideo();
-            }
-        });
-
-        document.getElementById('ctrl-rw').addEventListener('click', () => {
-            if (player && player.getCurrentTime) {
-                player.seekTo(player.getCurrentTime() - 5, true);
-            }
-        });
-
-        document.getElementById('ctrl-ff').addEventListener('click', () => {
-            if (player && player.getCurrentTime) {
-                player.seekTo(player.getCurrentTime() + 5, true);
-            }
-        });
-
-        function playNext() {
-            if (currentPlaylistItems.length === 0) return;
-            
-            let nextIndex;
-            if (isShuffle) {
-                nextIndex = Math.floor(Math.random() * currentPlaylistItems.length);
-            } else {
-                nextIndex = currentPlayingIndex + 1;
-                if (nextIndex >= currentPlaylistItems.length) {
-                    nextIndex = isLoop ? 0 : currentPlaylistItems.length - 1;
-                    if (!isLoop && nextIndex === currentPlayingIndex) return; // End of list
-                }
-            }
-            playVideo(nextIndex);
-        }
-
-        function playPrev() {
-            if (currentPlaylistItems.length === 0) return;
-            if (player.getCurrentTime() > 3) {
-                // If more than 3 seconds in, restart current track
-                player.seekTo(0);
+            if (items.length === 0) {
+                list.innerHTML = '<div style="padding:20px; text-align:center;">No results found</div>';
                 return;
             }
-            let prevIndex = currentPlayingIndex - 1;
-            if (prevIndex < 0) {
-                prevIndex = isLoop ? currentPlaylistItems.length - 1 : 0;
-            }
-            playVideo(prevIndex);
+
+            items.forEach(item => {
+                const title = item.snippet.title;
+                const thumb = item.snippet.thumbnails.default.url;
+                const id = type === 'playlist' ? item.id : item.id.videoId;
+
+                const card = document.createElement('div');
+                card.className = 'item-card';
+                card.onclick = () => {
+                    if (type === 'playlist') loadPlaylistVideos(id);
+                    else playVideo(id);
+                };
+
+                card.innerHTML = `
+                    <img src="${thumb}" alt="thumb">
+                    <div class="item-info">${title}</div>
+                `;
+                list.appendChild(card);
+            });
         }
 
-        document.getElementById('ctrl-next').addEventListener('click', playNext);
-        document.getElementById('ctrl-prev').addEventListener('click', playPrev);
+        async function loadPlaylistVideos(playlistId) {
+            log(`Loading playlist: ${playlistId}`);
+            try {
+                const response = await gapi.client.youtube.playlistItems.list({
+                    part: 'snippet,contentDetails',
+                    playlistId: playlistId,
+                    maxResults: 50
+                });
+                
+                // Map playlist items to a similar structure as search results for display
+                const videos = response.result.items.map(v => ({
+                    id: { videoId: v.contentDetails.videoId },
+                    snippet: v.snippet
+                }));
+                displayItems(videos, 'video');
+            } catch (err) {
+                log("Error loading videos: " + err.message, "err");
+            }
+        }
 
-        document.getElementById('ctrl-shuffle').addEventListener('click', (e) => {
-            isShuffle = !isShuffle;
-            e.currentTarget.classList.toggle('text-purple-400');
-            e.currentTarget.classList.toggle('text-gray-400');
-            log(`Shuffle is now ${isShuffle ? 'ON' : 'OFF'}`, 'info');
-        });
+        function handleSearch(e) {
+            if (e.key === 'Enter') {
+                const query = e.target.value;
+                if (!query) {
+                    loadUserPlaylists();
+                    return;
+                }
+                performGlobalSearch(query);
+            }
+        }
 
-        document.getElementById('ctrl-loop').addEventListener('click', (e) => {
-            isLoop = !isLoop;
-            e.currentTarget.classList.toggle('text-purple-400');
-            e.currentTarget.classList.toggle('text-gray-400');
-            log(`Loop is now ${isLoop ? 'ON' : 'OFF'}`, 'info');
-        });
+        async function performGlobalSearch(query) {
+            log(`Searching YouTube for: "${query}" in ${currentCategory} mode`);
+            
+            let searchParams = {
+                part: 'snippet',
+                q: query,
+                maxResults: 20,
+                type: 'video'
+            };
 
-        /**
-         * Category Modes (Music vs Video)
-         */
-        const playerWrapper = document.getElementById('player-wrapper');
-        const btnVideo = document.getElementById('mode-video');
-        const btnMusic = document.getElementById('mode-music');
+            // Music Mode Filter: YouTube Video Category 10 is Music
+            if (currentCategory === 'music') {
+                searchParams.videoCategoryId = '10';
+            }
 
-        btnVideo.addEventListener('click', () => {
-            playerWrapper.classList.remove('music-mode');
-            btnVideo.classList.add('active');
-            btnMusic.classList.remove('active');
-            log('Switched to Video Mode', 'info');
-        });
+            try {
+                const response = await gapi.client.youtube.search.list(searchParams);
+                displayItems(response.result.items, 'video');
+            } catch (err) {
+                log("Search Error: " + err.message, "err");
+                if (err.message.includes('403')) {
+                    log("Check if YouTube Data API is enabled in Google Console", "err");
+                }
+            }
+        }
 
-        btnMusic.addEventListener('click', () => {
-            playerWrapper.classList.add('music-mode');
-            btnMusic.classList.add('active');
-            btnVideo.classList.remove('active');
-            log('Switched to Music Mode (Video hidden to save bandwidth overhead where possible)', 'info');
-        });
-
-        document.getElementById('clear-log').addEventListener('click', () => {
-            consoleLog.innerHTML = '';
-        });
-
-        // Load YouTube Iframe API Script dynamically
-        const tag = document.createElement('script');
+        // YouTube Player Integration
+        var tag = document.createElement('script');
         tag.src = "https://www.youtube.com/iframe_api";
-        const firstScriptTag = document.getElementsByTagName('script')[0];
+        var firstScriptTag = document.getElementsByTagName('script')[0];
         firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 
-        // Load GIS and GAPI asynchronously
-        window.onload = function() {
-            gapiLoaded();
-            gisLoaded();
-        };
+        function onYouTubeIframeAPIReady() {
+            player = new YT.Player('player', {
+                height: '100%',
+                width: '100%',
+                videoId: 'dQw4w9WgXcQ', // Placeholder
+                playerVars: {
+                    'playsinline': 1,
+                    'autoplay': 0
+                }
+            });
+        }
+
+        function playVideo(videoId) {
+            if (player && player.loadVideoById) {
+                player.loadVideoById(videoId);
+                log(`Playing Video ID: ${videoId}`, "success");
+            }
+        }
     </script>
 </body>
 </html>
