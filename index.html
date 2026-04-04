@@ -48,6 +48,7 @@
             flex-direction: column;
             border-right: 1px solid var(--border-color);
             flex-shrink: 0;
+            position: relative;
         }
 
         #display-area { 
@@ -82,6 +83,8 @@
             font-size: 12px;
         }
 
+        .btn-group { display: flex; gap: 8px; }
+
         .icon-btn {
             font-size: 18px;
             cursor: pointer;
@@ -90,6 +93,9 @@
             color: var(--text-color);
             padding: 6px;
             border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .tabs {
@@ -118,10 +124,13 @@
             padding: 15px 20px; 
             flex-shrink: 0;
             background: rgba(0,0,0,0.1);
+            display: flex;
+            gap: 10px;
+            align-items: center;
         }
 
         #search-input {
-            width: 100%;
+            flex: 1;
             padding: 10px 15px;
             border-radius: 8px;
             border: 1px solid var(--border-color);
@@ -129,6 +138,51 @@
             color: var(--text-color);
             box-sizing: border-box;
             outline: none;
+        }
+
+        #clear-history-btn {
+            display: none;
+            background: rgba(255, 71, 87, 0.1);
+            color: var(--heart-color);
+            border: 1px solid var(--heart-color);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: bold;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        #clear-history-btn.confirming {
+            background: var(--heart-color);
+            color: white;
+        }
+
+        /* TOAST NOTIFICATION */
+        #undo-toast {
+            position: absolute;
+            bottom: -60px;
+            left: 20px;
+            right: 20px;
+            background: #334155;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
+            transition: bottom 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 100;
+        }
+        #undo-toast.show { bottom: 20px; }
+        #undo-btn {
+            color: var(--accent-color);
+            font-weight: 800;
+            text-transform: uppercase;
+            cursor: pointer;
+            font-size: 12px;
+            border: none;
+            background: none;
         }
 
         /* VIRTUAL SCROLL CONTAINERS */
@@ -151,7 +205,7 @@
             top: 0;
             left: 0;
             width: 100%;
-            pointer-events: none; /* Height provider only */
+            pointer-events: none;
         }
 
         #visible-items {
@@ -167,7 +221,7 @@
             position: absolute;
             left: 20px;
             right: 20px;
-            height: 70px; /* Fixed height for virtual math */
+            height: 100px; /* Increased height for stats */
             display: flex;
             gap: 12px;
             padding: 8px;
@@ -183,12 +237,30 @@
             border-color: var(--border-color);
         }
 
+        .thumb-container {
+            position: relative;
+            width: 120px;
+            height: 68px;
+            flex-shrink: 0;
+        }
+
         .item-card img {
-            width: 90px;
-            height: 50px;
+            width: 100%;
+            height: 100%;
             border-radius: 4px;
             object-fit: cover;
-            flex-shrink: 0;
+        }
+
+        .duration-badge {
+            position: absolute;
+            bottom: 4px;
+            right: 4px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            font-size: 10px;
+            padding: 2px 4px;
+            border-radius: 2px;
+            font-weight: bold;
         }
 
         .item-details { flex: 1; min-width: 0; }
@@ -197,9 +269,19 @@
             font-weight: 500; 
             white-space: nowrap; 
             overflow: hidden; 
-            text-overflow: ellipsis; 
+            text-overflow: ellipsis;
+            margin-bottom: 2px;
         }
-        .item-channel { font-size: 11px; color: var(--secondary-text); }
+        .item-channel { font-size: 11px; color: var(--secondary-text); margin-bottom: 4px; }
+        
+        .item-stats {
+            display: flex;
+            gap: 12px;
+            font-size: 10px;
+            color: var(--secondary-text);
+            margin-top: 2px;
+        }
+        .stat-item { display: flex; align-items: center; gap: 4px; }
 
         .fav-btn {
             background: none;
@@ -263,11 +345,17 @@
     </div>
     <div class="search-box">
         <input type="text" id="search-input" placeholder="Search..." onkeypress="handleSearch(event)">
+        <button id="clear-history-btn" onclick="handleClearHistory()">Clear History</button>
     </div>
     
     <div id="viewport">
         <div id="scroll-content"></div>
         <div id="visible-items"></div>
+    </div>
+
+    <div id="undo-toast">
+        <span style="font-size: 13px;">History cleared</span>
+        <button id="undo-btn" onclick="undoClearHistory()">Undo</button>
     </div>
 </div>
 
@@ -289,9 +377,12 @@
     let nextPageToken = '';
     let isFetching = false;
     let currentSearchQuery = '';
+    let isConfirmingClear = false;
+    let tempHistoryBuffer = null;
+    let undoTimeout = null;
 
     // VIRTUAL SCROLL SETTINGS
-    const ITEM_HEIGHT = 80; // 70px height + 10px gap
+    const ITEM_HEIGHT = 110; 
     const BUFFER_COUNT = 5;
 
     let historyList = JSON.parse(localStorage.getItem('yt_history') || '[]');
@@ -320,8 +411,6 @@
         const viewport = document.getElementById('viewport');
         viewport.addEventListener('scroll', () => {
             renderVirtualItems();
-            
-            // Check for more data at bottom
             const scrollBottom = viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight;
             if (scrollBottom < 300) {
                 if (!isFetching && nextPageToken && (currentCategory === 'video' || currentCategory === 'music')) {
@@ -331,12 +420,39 @@
         });
     }
 
+    /**
+     * Converts ISO 8601 duration (PT4M20S) to readable format (4:20)
+     */
+    function formatDuration(duration) {
+        if (!duration) return "0:00";
+        const match = duration.match(/PT(\d+H)?(\d+M)?(\d+S)?/);
+        const hours = (parseInt(match[1]) || 0);
+        const minutes = (parseInt(match[2]) || 0);
+        const seconds = (parseInt(match[3]) || 0);
+        
+        let result = "";
+        if (hours > 0) result += hours + ":";
+        result += (hours > 0 && minutes < 10 ? "0" + minutes : minutes) + ":";
+        result += (seconds < 10 ? "0" + seconds : seconds);
+        return result;
+    }
+
+    /**
+     * Formats numbers to K/M suffixes
+     */
+    function formatCount(num) {
+        if (num === undefined || num === null) return "0";
+        const n = parseInt(num);
+        if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
+        if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
+        return n.toString();
+    }
+
     function renderVirtualItems() {
         const viewport = document.getElementById('viewport');
         const visibleContainer = document.getElementById('visible-items');
         const scrollContent = document.getElementById('scroll-content');
         
-        // Set total height so scrollbar is correct
         scrollContent.style.height = `${activeList.length * ITEM_HEIGHT}px`;
 
         const scrollTop = viewport.scrollTop;
@@ -352,16 +468,26 @@
             const vid = item.id.videoId || item.id || item.contentDetails?.videoId;
             const isFav = favorites.some(f => (f.id.videoId || f.id || f.contentDetails?.videoId) === vid);
             
+            // Access stored extra stats (duration, likes)
+            const stats = item.extraStats || { duration: '?:??', likes: '0', dislikes: '0', views: '0' };
+
             const card = document.createElement('div');
             card.className = 'item-card';
             card.style.transform = `translateY(${i * ITEM_HEIGHT}px)`;
             card.onclick = () => playItem(vid, item);
             
             card.innerHTML = `
-                <img src="${item.snippet.thumbnails.medium.url}">
+                <div class="thumb-container">
+                    <img src="${item.snippet.thumbnails.medium.url}">
+                    <div class="duration-badge">${stats.duration}</div>
+                </div>
                 <div class="item-details">
-                    <div class="item-title">${item.snippet.title}</div>
+                    <div class="item-title" title="${item.snippet.title}">${item.snippet.title}</div>
                     <div class="item-channel">${item.snippet.channelTitle}</div>
+                    <div class="item-stats">
+                        <div class="stat-item" title="Likes">👍 ${formatCount(stats.likes)}</div>
+                        <div class="stat-item" title="Views">👁️ ${formatCount(stats.views)}</div>
+                    </div>
                 </div>
                 <button class="fav-btn ${isFav ? 'active' : ''}" onclick="event.stopPropagation(); toggleFav('${vid}', ${JSON.stringify(item).replace(/"/g, '&quot;')})">
                     ${isFav ? '❤️' : '🤍'}
@@ -395,6 +521,10 @@
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
         document.getElementById(`tab-${cat}`).classList.add('active');
         
+        const clearBtn = document.getElementById('clear-history-btn');
+        clearBtn.style.display = (cat === 'history') ? 'block' : 'none';
+        resetClearConfirmation();
+
         if (cat === 'music') document.body.classList.add('music-mode');
         else document.body.classList.remove('music-mode');
         
@@ -410,14 +540,6 @@
         document.getElementById('viewport').scrollTop = 0;
     }
 
-    function handleSearch(e) { 
-        if (e.key === 'Enter') {
-            currentSearchQuery = e.target.value;
-            nextPageToken = '';
-            performSearch(currentSearchQuery); 
-        }
-    }
-
     async function performSearch(query, append = false) {
         if (isFetching) return;
         isFetching = true;
@@ -426,7 +548,7 @@
             q: query || (currentCategory === 'music' ? 'top music hits' : 'trending'), 
             part: 'snippet', 
             type: 'video', 
-            maxResults: 30,
+            maxResults: 25, 
             pageToken: nextPageToken 
         };
         
@@ -434,17 +556,96 @@
 
         try {
             const res = await gapi.client.youtube.search.list(params);
-            const newItems = res.result.items;
+            let searchItems = res.result.items;
             nextPageToken = res.result.nextPageToken || '';
             
-            if (append) activeList = activeList.concat(newItems);
-            else activeList = newItems;
+            // Double-Check Logic: Fetch extra metadata (durations and stats)
+            const videoIds = searchItems.map(item => item.id.videoId).filter(id => !!id).join(',');
+            if (videoIds) {
+                const statsRes = await gapi.client.youtube.videos.list({
+                    part: 'contentDetails,statistics',
+                    id: videoIds
+                });
+                
+                const statsMap = {};
+                statsRes.result.items.forEach(v => {
+                    statsMap[v.id] = {
+                        duration: formatDuration(v.contentDetails.duration),
+                        likes: v.statistics.likeCount || 0,
+                        views: v.statistics.viewCount || 0
+                    };
+                });
+
+                // Merge stats into search items
+                searchItems = searchItems.map(item => ({
+                    ...item,
+                    extraStats: statsMap[item.id.videoId] || { duration: '?:??', likes: '0', views: '0' }
+                }));
+            }
+
+            if (append) activeList = activeList.concat(searchItems);
+            else activeList = searchItems;
             
             renderVirtualItems();
         } catch (e) {
-            console.error(e);
+            console.error("Search Error:", e);
         } finally {
             isFetching = false;
+        }
+    }
+
+    function handleClearHistory() {
+        const btn = document.getElementById('clear-history-btn');
+        if (!isConfirmingClear) {
+            isConfirmingClear = true;
+            btn.innerText = "Are you sure?";
+            btn.classList.add('confirming');
+            setTimeout(() => { if(isConfirmingClear) resetClearConfirmation(); }, 3000);
+        } else {
+            tempHistoryBuffer = [...historyList];
+            historyList = [];
+            localStorage.setItem('yt_history', JSON.stringify([]));
+            activeList = [];
+            renderVirtualItems();
+            resetClearConfirmation();
+            const toast = document.getElementById('undo-toast');
+            toast.classList.add('show');
+            if (undoTimeout) clearTimeout(undoTimeout);
+            undoTimeout = setTimeout(() => {
+                toast.classList.remove('show');
+                tempHistoryBuffer = null;
+            }, 4000);
+        }
+    }
+
+    function undoClearHistory() {
+        if (tempHistoryBuffer) {
+            historyList = tempHistoryBuffer;
+            localStorage.setItem('yt_history', JSON.stringify(historyList));
+            if (currentCategory === 'history') {
+                activeList = [...historyList];
+                renderVirtualItems();
+            }
+            document.getElementById('undo-toast').classList.remove('show');
+            tempHistoryBuffer = null;
+            if (undoTimeout) clearTimeout(undoTimeout);
+        }
+    }
+
+    function resetClearConfirmation() {
+        isConfirmingClear = false;
+        const btn = document.getElementById('clear-history-btn');
+        if (btn) {
+            btn.innerText = "Clear History";
+            btn.classList.remove('confirming');
+        }
+    }
+
+    function handleSearch(e) { 
+        if (e.key === 'Enter') {
+            currentSearchQuery = e.target.value;
+            nextPageToken = '';
+            performSearch(currentSearchQuery); 
         }
     }
 
@@ -453,7 +654,6 @@
         if (idx > -1) favorites.splice(idx, 1);
         else favorites.unshift(item);
         localStorage.setItem('yt_favorites', JSON.stringify(favorites));
-        
         if (currentCategory === 'favs') activeList = [...favorites];
         renderVirtualItems();
     }
@@ -464,8 +664,12 @@
             const exists = historyList.findIndex(h => (h.id.videoId || h.id || h.contentDetails?.videoId) === id);
             if (exists > -1) historyList.splice(exists, 1);
             historyList.unshift(item);
-            if (historyList.length > 100) historyList.pop();
+            if (historyList.length > 200) historyList.pop();
             localStorage.setItem('yt_history', JSON.stringify(historyList));
+            if (currentCategory === 'history') {
+                activeList = [...historyList];
+                renderVirtualItems();
+            }
         }
     }
 
