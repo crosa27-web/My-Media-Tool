@@ -3,12 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Media Tool - Dark Edition</title>
+    <title>My Media Tool - Virtual Scroll Edition</title>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="https://apis.google.com/js/api.js"></script>
     <style>
         :root {
-            /* Primary Dark Theme Colors */
             --bg-color: #0f172a;
             --sidebar-color: #1e293b;
             --accent-color: #ff0000;
@@ -19,6 +18,7 @@
             --player-bg: #000000;
             --heart-color: #ff4757;
             --border-color: rgba(255, 255, 255, 0.1);
+            --scrollbar-thumb: #475569;
         }
 
         .music-mode {
@@ -26,6 +26,7 @@
             --bg-color: #050505;
             --sidebar-color: #121212;
             --item-hover: #282828;
+            --scrollbar-thumb: #3f3f3f;
         }
 
         body {
@@ -35,48 +36,31 @@
             color: var(--text-color);
             display: flex;
             height: 100vh;
+            width: 100vw;
             overflow: hidden;
-            transition: all 0.3s ease;
         }
 
         #sidebar {
             width: 400px;
+            height: 100vh;
             background-color: var(--sidebar-color);
             display: flex;
             flex-direction: column;
             border-right: 1px solid var(--border-color);
-            z-index: 10;
-            box-shadow: 4px 0 15px rgba(0,0,0,0.3);
+            flex-shrink: 0;
         }
 
         #display-area { 
             flex: 1; 
-            position: relative; 
             background: var(--player-bg);
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        #display-area.mini-player {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            width: 300px;
-            height: 168px;
-            z-index: 100;
-            border-radius: 12px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.8);
-            overflow: hidden;
-            border: 1px solid var(--border-color);
         }
 
         .header {
             padding: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
+            flex-shrink: 0;
             border-bottom: 1px solid var(--border-color);
         }
 
@@ -84,107 +68,127 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            margin-bottom: 15px;
         }
-
-        .btn-group { display: flex; gap: 12px; align-items: center; }
 
         #auth-btn {
             background-color: var(--accent-color);
             color: white;
             border: none;
-            padding: 10px 18px;
+            padding: 8px 16px;
             border-radius: 20px;
             cursor: pointer;
             font-weight: 600;
-            font-size: 13px;
-            transition: opacity 0.2s;
+            font-size: 12px;
         }
-        #auth-btn:hover { opacity: 0.9; }
 
         .icon-btn {
             font-size: 18px;
             cursor: pointer;
-            opacity: 0.7;
-            background: none;
-            border: none;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border-color);
             color: var(--text-color);
-            padding: 5px;
-            transition: opacity 0.2s, transform 0.2s;
+            padding: 6px;
+            border-radius: 8px;
         }
-        .icon-btn:hover { opacity: 1; transform: scale(1.1); }
 
         .tabs {
             display: flex;
-            background: rgba(0,0,0,0.3);
+            background: rgba(0,0,0,0.2);
             padding: 4px;
             border-radius: 10px;
-            gap: 2px;
+            gap: 4px;
         }
 
         .tab {
             flex: 1;
             text-align: center;
-            padding: 8px;
+            padding: 8px 4px;
             cursor: pointer;
-            border-radius: 8px;
-            font-size: 12px;
-            font-weight: 600;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
             color: var(--secondary-text);
-            transition: all 0.2s;
         }
 
         .tab.active { background: var(--accent-color); color: white; }
-        .tab:not(.active):hover { color: var(--text-color); background: rgba(255,255,255,0.05); }
 
-        .search-box { padding: 15px 20px; }
+        .search-box { 
+            padding: 15px 20px; 
+            flex-shrink: 0;
+            background: rgba(0,0,0,0.1);
+        }
 
         #search-input {
             width: 100%;
-            padding: 12px 20px;
-            border-radius: 25px;
+            padding: 10px 15px;
+            border-radius: 8px;
             border: 1px solid var(--border-color);
-            background: rgba(255,255,255,0.05);
+            background: var(--bg-color);
             color: var(--text-color);
             box-sizing: border-box;
             outline: none;
-            transition: border 0.3s;
         }
-        #search-input:focus { border-color: var(--accent-color); }
 
-        #content-list {
+        /* VIRTUAL SCROLL CONTAINERS */
+        #viewport {
             flex: 1;
             overflow-y: auto;
-            padding: 10px 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
+            position: relative;
             scrollbar-width: thin;
-            scrollbar-color: var(--item-hover) transparent;
+            scrollbar-color: var(--scrollbar-thumb) transparent;
+        }
+
+        #viewport::-webkit-scrollbar { width: 8px; }
+        #viewport::-webkit-scrollbar-thumb {
+            background-color: var(--scrollbar-thumb);
+            border-radius: 20px;
+        }
+
+        #scroll-content {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            pointer-events: none; /* Height provider only */
+        }
+
+        #visible-items {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 0 20px;
+            box-sizing: border-box;
         }
 
         .item-card {
+            position: absolute;
+            left: 20px;
+            right: 20px;
+            height: 70px; /* Fixed height for virtual math */
             display: flex;
-            gap: 14px;
-            padding: 10px;
+            gap: 12px;
+            padding: 8px;
             background: var(--card-bg);
-            border: 1px solid transparent;
-            border-radius: 12px;
+            border-radius: 8px;
             cursor: pointer;
             align-items: center;
-            position: relative;
-            transition: all 0.2s ease;
+            border: 1px solid transparent;
+            transition: background 0.2s;
         }
         .item-card:hover { 
-            background: var(--item-hover); 
+            background: var(--item-hover);
             border-color: var(--border-color);
-            transform: translateY(-2px);
         }
 
         .item-card img {
-            width: 110px;
-            height: 62px;
-            border-radius: 8px;
+            width: 90px;
+            height: 50px;
+            border-radius: 4px;
             object-fit: cover;
+            flex-shrink: 0;
         }
 
         .item-details { flex: 1; min-width: 0; }
@@ -194,39 +198,25 @@
             white-space: nowrap; 
             overflow: hidden; 
             text-overflow: ellipsis; 
-            margin-bottom: 2px;
         }
         .item-channel { font-size: 11px; color: var(--secondary-text); }
 
         .fav-btn {
             background: none;
             border: none;
-            font-size: 18px;
+            font-size: 16px;
             cursor: pointer;
-            padding: 8px;
             color: var(--secondary-text);
-            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
         .fav-btn.active { color: var(--heart-color); }
-        .fav-btn:hover { transform: scale(1.2); }
 
         #video-container { width: 100%; height: 100%; }
-
-        .loading-trigger {
-            padding: 30px;
-            text-align: center;
-            font-size: 12px;
-            color: var(--secondary-text);
-            letter-spacing: 1px;
-            text-transform: uppercase;
-        }
 
         .modal-overlay {
             display: none;
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.85);
-            backdrop-filter: blur(8px);
+            background: rgba(0,0,0,0.9);
             z-index: 200;
             align-items: center;
             justify-content: center;
@@ -234,28 +224,20 @@
 
         .modal-content {
             background: var(--sidebar-color);
-            color: var(--text-color);
             padding: 30px;
-            border-radius: 20px;
-            width: 90%;
-            max-width: 400px;
+            border-radius: 12px;
+            width: 350px;
             border: 1px solid var(--border-color);
-            box-shadow: 0 25px 50px rgba(0,0,0,0.5);
         }
 
         @media (max-width: 900px) {
             body { flex-direction: column; }
-            #display-area { 
-                width: 100%; 
-                height: 35vh; 
-                flex: none;
-                order: -1; 
-            }
-            #sidebar { width: 100%; flex: 1; }
+            #sidebar { width: 100%; height: 60vh; }
+            #display-area { height: 40vh; flex: none; }
         }
     </style>
 </head>
-<body class="dark-theme">
+<body>
 
 <div id="display-area">
     <div id="video-container">
@@ -268,8 +250,7 @@
         <div class="top-row">
             <button id="auth-btn" onclick="handleAuthClick()">Connect Account</button>
             <div class="btn-group">
-                <button class="icon-btn" onclick="shuffleCurrentList()" title="Shuffle List">🔀</button>
-                <button class="icon-btn" onclick="toggleMiniMode()" title="Toggle Mini Player">🔳</button>
+                <button class="icon-btn" onclick="shuffleCurrentList()" title="Shuffle">🔀</button>
                 <button class="icon-btn" onclick="showSettings()" title="Settings">⚙️</button>
             </div>
         </div>
@@ -281,21 +262,21 @@
         </div>
     </div>
     <div class="search-box">
-        <input type="text" id="search-input" placeholder="Search YouTube..." onkeypress="handleSearch(event)">
+        <input type="text" id="search-input" placeholder="Search..." onkeypress="handleSearch(event)">
     </div>
-    <div id="content-list"></div>
+    
+    <div id="viewport">
+        <div id="scroll-content"></div>
+        <div id="visible-items"></div>
+    </div>
 </div>
 
 <div id="modal-settings" class="modal-overlay">
     <div class="modal-content">
-        <h3 style="margin-top:0">App Credentials</h3>
-        <p style="font-size: 12px; color: var(--secondary-text); margin-bottom: 20px;">Enter your YouTube API keys to begin.</p>
-        <input type="text" id="input-client-id" placeholder="Client ID" style="width:100%; margin-bottom:12px; padding:12px; border-radius:8px; border:1px solid var(--border-color); background:rgba(0,0,0,0.2); color:white;">
-        <input type="password" id="input-api-key" placeholder="API Key" style="width:100%; margin-bottom:20px; padding:12px; border-radius:8px; border:1px solid var(--border-color); background:rgba(0,0,0,0.2); color:white;">
-        <div style="display:flex; gap:12px;">
-            <button onclick="closeModals()" style="flex:1; padding:12px; border-radius:8px; border:none; background:rgba(255,255,255,0.1); color:white; cursor:pointer;">Cancel</button>
-            <button onclick="saveSettings()" style="flex:1; padding:12px; border-radius:8px; border:none; background:var(--accent-color); color:white; font-weight:bold; cursor:pointer;">Save</button>
-        </div>
+        <h3>API Setup</h3>
+        <input type="text" id="input-client-id" placeholder="Client ID" style="width:100%; margin-bottom:10px; padding:10px; background:#000; color:#fff; border:1px solid #444;">
+        <input type="password" id="input-api-key" placeholder="API Key" style="width:100%; margin-bottom:15px; padding:10px; background:#000; color:#fff; border:1px solid #444;">
+        <button onclick="saveSettings()" style="width:100%; padding:10px; background:var(--accent-color); color:white; border:none; cursor:pointer; font-weight:bold;">Save & Reload</button>
     </div>
 </div>
 
@@ -309,6 +290,10 @@
     let isFetching = false;
     let currentSearchQuery = '';
 
+    // VIRTUAL SCROLL SETTINGS
+    const ITEM_HEIGHT = 80; // 70px height + 10px gap
+    const BUFFER_COUNT = 5;
+
     let historyList = JSON.parse(localStorage.getItem('yt_history') || '[]');
     let favorites = JSON.parse(localStorage.getItem('yt_favorites') || '[]');
 
@@ -316,7 +301,7 @@
         if (!CLIENT_ID || !API_KEY) showSettings();
         else {
             initGapi();
-            setupInfiniteScroll();
+            setupVirtualScroll();
         }
     };
 
@@ -331,10 +316,14 @@
         });
     }
 
-    function setupInfiniteScroll() {
-        const listContainer = document.getElementById('content-list');
-        listContainer.addEventListener('scroll', () => {
-            if (listContainer.scrollTop + listContainer.clientHeight >= listContainer.scrollHeight - 150) {
+    function setupVirtualScroll() {
+        const viewport = document.getElementById('viewport');
+        viewport.addEventListener('scroll', () => {
+            renderVirtualItems();
+            
+            // Check for more data at bottom
+            const scrollBottom = viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight;
+            if (scrollBottom < 300) {
                 if (!isFetching && nextPageToken && (currentCategory === 'video' || currentCategory === 'music')) {
                     performSearch(currentSearchQuery, true);
                 }
@@ -342,13 +331,51 @@
         });
     }
 
-    function toggleMiniMode() { document.getElementById('display-area').classList.toggle('mini-player'); }
+    function renderVirtualItems() {
+        const viewport = document.getElementById('viewport');
+        const visibleContainer = document.getElementById('visible-items');
+        const scrollContent = document.getElementById('scroll-content');
+        
+        // Set total height so scrollbar is correct
+        scrollContent.style.height = `${activeList.length * ITEM_HEIGHT}px`;
+
+        const scrollTop = viewport.scrollTop;
+        const viewportHeight = viewport.clientHeight;
+
+        const startIndex = Math.max(0, Math.floor(scrollTop / ITEM_HEIGHT) - BUFFER_COUNT);
+        const endIndex = Math.min(activeList.length - 1, Math.ceil((scrollTop + viewportHeight) / ITEM_HEIGHT) + BUFFER_COUNT);
+
+        visibleContainer.innerHTML = '';
+
+        for (let i = startIndex; i <= endIndex; i++) {
+            const item = activeList[i];
+            const vid = item.id.videoId || item.id || item.contentDetails?.videoId;
+            const isFav = favorites.some(f => (f.id.videoId || f.id || f.contentDetails?.videoId) === vid);
+            
+            const card = document.createElement('div');
+            card.className = 'item-card';
+            card.style.transform = `translateY(${i * ITEM_HEIGHT}px)`;
+            card.onclick = () => playItem(vid, item);
+            
+            card.innerHTML = `
+                <img src="${item.snippet.thumbnails.medium.url}">
+                <div class="item-details">
+                    <div class="item-title">${item.snippet.title}</div>
+                    <div class="item-channel">${item.snippet.channelTitle}</div>
+                </div>
+                <button class="fav-btn ${isFav ? 'active' : ''}" onclick="event.stopPropagation(); toggleFav('${vid}', ${JSON.stringify(item).replace(/"/g, '&quot;')})">
+                    ${isFav ? '❤️' : '🤍'}
+                </button>
+            `;
+            visibleContainer.appendChild(card);
+        }
+    }
+
     function showSettings() { 
         document.getElementById('input-client-id').value = CLIENT_ID;
         document.getElementById('input-api-key').value = API_KEY;
         document.getElementById('modal-settings').style.display = 'flex'; 
     }
-    function closeModals() { document.querySelectorAll('.modal-overlay').forEach(m => m.style.display = 'none'); }
     
     function saveSettings() {
         localStorage.setItem('yt_client_id', document.getElementById('input-client-id').value.trim());
@@ -357,7 +384,7 @@
     }
 
     function handleAuthClick() {
-        tokenClient.callback = async (resp) => { if (!resp.error) { document.getElementById('auth-btn').innerText = "Connected"; loadInitial(); } };
+        tokenClient.callback = async (resp) => { if (!resp.error) { document.getElementById('auth-btn').innerText = "Logged In"; performSearch(''); } };
         tokenClient.requestAccessToken({prompt: gapi.client.getToken() ? '' : 'consent'});
     }
 
@@ -371,19 +398,16 @@
         if (cat === 'music') document.body.classList.add('music-mode');
         else document.body.classList.remove('music-mode');
         
-        if (cat === 'favs') renderList(favorites);
-        else if (cat === 'history') renderList(historyList);
-        else {
-            currentSearchQuery = document.getElementById('search-input').value || '';
-            performSearch(currentSearchQuery);
+        if (cat === 'favs') {
+            activeList = [...favorites];
+            renderVirtualItems();
+        } else if (cat === 'history') {
+            activeList = [...historyList];
+            renderVirtualItems();
+        } else {
+            performSearch(document.getElementById('search-input').value || '');
         }
-    }
-
-    async function loadInitial() {
-        try {
-            const res = await gapi.client.youtube.playlists.list({ mine: true, part: 'snippet', maxResults: 10 });
-            renderList(res.result.items, false, true); 
-        } catch (e) {}
+        document.getElementById('viewport').scrollTop = 0;
     }
 
     function handleSearch(e) { 
@@ -399,10 +423,10 @@
         isFetching = true;
 
         let params = { 
-            q: query || 'trending music', 
+            q: query || (currentCategory === 'music' ? 'top music hits' : 'trending'), 
             part: 'snippet', 
             type: 'video', 
-            maxResults: 25,
+            maxResults: 30,
             pageToken: nextPageToken 
         };
         
@@ -413,113 +437,50 @@
             const newItems = res.result.items;
             nextPageToken = res.result.nextPageToken || '';
             
-            if (append) {
-                activeList = activeList.concat(newItems);
-            } else {
-                activeList = newItems;
-                document.getElementById('content-list').scrollTop = 0;
-            }
+            if (append) activeList = activeList.concat(newItems);
+            else activeList = newItems;
             
-            renderList(newItems, append);
+            renderVirtualItems();
         } catch (e) {
-            console.error("Search Error", e);
+            console.error(e);
         } finally {
             isFetching = false;
         }
     }
 
-    function toggleFavorite(event, item) {
-        event.stopPropagation();
-        const videoId = item.id.videoId || item.id || item.contentDetails?.videoId;
-        const index = favorites.findIndex(f => (f.id.videoId || f.id || f.contentDetails?.videoId) === videoId);
-        
-        if (index > -1) {
-            favorites.splice(index, 1);
-        } else {
-            favorites.unshift(item);
-        }
-        
+    function toggleFav(id, item) {
+        const idx = favorites.findIndex(f => (f.id.videoId || f.id || f.contentDetails?.videoId) === id);
+        if (idx > -1) favorites.splice(idx, 1);
+        else favorites.unshift(item);
         localStorage.setItem('yt_favorites', JSON.stringify(favorites));
         
-        // Refresh heart icons in view
-        const btn = event.currentTarget;
-        btn.classList.toggle('active');
-        btn.innerHTML = btn.classList.contains('active') ? '❤️' : '🤍';
-
-        if (currentCategory === 'favs') renderList(favorites);
-    }
-
-    function renderList(items, append = false, isPlaylist = false) {
-        const container = document.getElementById('content-list');
-        if (!append) container.innerHTML = '';
-
-        items.forEach((item) => {
-            const videoId = item.id.videoId || item.id || item.contentDetails?.videoId;
-            const isFav = favorites.some(f => (f.id.videoId || f.id || f.contentDetails?.videoId) === videoId);
-            
-            const card = document.createElement('div');
-            card.className = 'item-card';
-            card.onclick = () => { if (isPlaylist) loadPlaylist(item.id); else playItem(videoId, item); };
-            
-            card.innerHTML = `
-                <img src="${item.snippet.thumbnails.medium.url}" loading="lazy">
-                <div class="item-details">
-                    <div class="item-title">${item.snippet.title}</div>
-                    <div class="item-channel">${item.snippet.channelTitle || ''}</div>
-                </div>
-                <button class="fav-btn ${isFav ? 'active' : ''}" onclick="toggleFavorite(event, ${JSON.stringify(item).replace(/"/g, '&quot;')})">
-                    ${isFav ? '❤️' : '🤍'}
-                </button>
-            `;
-            container.appendChild(card);
-        });
-
-        if (nextPageToken && !isPlaylist && currentCategory !== 'favs' && currentCategory !== 'history') {
-            let loader = document.getElementById('loading-indicator');
-            if (loader) loader.remove();
-            loader = document.createElement('div');
-            loader.id = 'loading-indicator';
-            loader.className = 'loading-trigger';
-            loader.innerText = 'Scrolling for more...';
-            container.appendChild(loader);
-        }
-    }
-
-    async function loadPlaylist(id) {
-        const res = await gapi.client.youtube.playlistItems.list({ playlistId: id, part: 'snippet,contentDetails', maxResults: 50 });
-        activeList = res.result.items;
-        nextPageToken = ''; 
-        renderList(activeList);
-    }
-
-    function shuffleCurrentList() {
-        if (activeList.length < 2) return;
-        for (let i = activeList.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [activeList[i], activeList[j]] = [activeList[j], activeList[i]];
-        }
-        renderList(activeList);
-        const firstItem = activeList[0];
-        const firstVid = firstItem.id.videoId || firstItem.id || firstItem.contentDetails?.videoId;
-        playItem(firstVid, firstItem);
+        if (currentCategory === 'favs') activeList = [...favorites];
+        renderVirtualItems();
     }
 
     function playItem(id, item) { 
         if (player?.loadVideoById) {
             player.loadVideoById(id);
-            // Save to history
             const exists = historyList.findIndex(h => (h.id.videoId || h.id || h.contentDetails?.videoId) === id);
             if (exists > -1) historyList.splice(exists, 1);
             historyList.unshift(item);
-            if (historyList.length > 50) historyList.pop();
+            if (historyList.length > 100) historyList.pop();
             localStorage.setItem('yt_history', JSON.stringify(historyList));
         }
+    }
+
+    function shuffleCurrentList() {
+        if (activeList.length < 2) return;
+        activeList.sort(() => Math.random() - 0.5);
+        renderVirtualItems();
+        const first = activeList[0];
+        playItem(first.id.videoId || first.id || first.contentDetails?.videoId, first);
     }
 
     var tag = document.createElement('script'); tag.src = "https://www.youtube.com/iframe_api";
     document.getElementsByTagName('script')[0].parentNode.insertBefore(tag, null);
     function onYouTubeIframeAPIReady() {
-        player = new YT.Player('player', { height: '100%', width: '100%', playerVars: { 'playsinline': 1, 'autoplay': 1, 'origin': window.location.origin } });
+        player = new YT.Player('player', { height: '100%', width: '100%', playerVars: { 'autoplay': 1, 'origin': window.location.origin } });
     }
 </script>
 </body>
