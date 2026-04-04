@@ -390,8 +390,8 @@
             renderVirtualItems();
             const scrollBottom = viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight;
             if (scrollBottom < 300 && !isFetching && nextPageToken) {
-                if (['home', 'playlists', 'music'].includes(currentCategory)) fetchPersonalizedData(true);
-                else if (currentSearchQuery) performSearch(currentSearchQuery, true);
+                if (currentSearchQuery) performSearch(currentSearchQuery, true);
+                else if (['home', 'playlists', 'music'].includes(currentCategory)) fetchPersonalizedData(true);
             }
         });
     }
@@ -448,6 +448,7 @@
         try {
             let res;
             if (currentCategory === 'home') {
+                // Home logic: Try activities first (subscriptions/recommendations)
                 res = await gapi.client.youtube.activities.list({
                     part: 'snippet,contentDetails',
                     mine: true,
@@ -455,9 +456,28 @@
                     pageToken: nextPageToken
                 });
                 let items = res.result.items.filter(it => it.contentDetails.upload || it.contentDetails.recommendation);
-                await enrichWithStats(items, append, 'activity');
+                
+                // Fallback: If your personal feed is empty or very short, pull trending/popular videos
+                if (items.length < 5 && !nextPageToken) {
+                    const fallbackRes = await gapi.client.youtube.videos.list({
+                        part: 'snippet,contentDetails,statistics',
+                        chart: 'mostPopular',
+                        maxResults: 20
+                    });
+                    items = items.concat(fallbackRes.result.items);
+                } else {
+                    await enrichWithStats(items, append, 'activity');
+                    nextPageToken = res.result.nextPageToken || '';
+                    isFetching = false;
+                    renderVirtualItems();
+                    return; // enriched method handles the list update
+                }
+                
+                if (append) activeList = activeList.concat(items);
+                else activeList = items;
+                nextPageToken = res.result.nextPageToken || '';
+
             } else if (currentCategory === 'music') {
-                // Fetch music specifically by category 10 (Music)
                 res = await gapi.client.youtube.search.list({
                     part: 'snippet',
                     type: 'video',
@@ -467,6 +487,10 @@
                     q: '' 
                 });
                 await enrichWithStats(res.result.items, append, 'search');
+                nextPageToken = res.result.nextPageToken || '';
+                isFetching = false;
+                renderVirtualItems();
+                return;
             } else if (currentCategory === 'playlists') {
                 res = await gapi.client.youtube.playlists.list({
                     part: 'snippet,contentDetails',
@@ -477,8 +501,8 @@
                 const items = res.result.items;
                 if (append) activeList = activeList.concat(items);
                 else activeList = items;
+                nextPageToken = res.result.nextPageToken || '';
             }
-            nextPageToken = res.result.nextPageToken || '';
             renderVirtualItems();
         } catch (e) { console.error("Fetch Error", e); }
         finally { isFetching = false; }
@@ -487,7 +511,7 @@
     async function enrichWithStats(items, append, type) {
         const videoIds = items.map(it => {
             if (type === 'activity') return it.contentDetails.upload?.videoId || it.contentDetails.recommendation?.resourceId?.videoId;
-            return it.id.videoId;
+            return it.id.videoId || it.id;
         }).filter(id => !!id).join(',');
 
         if (videoIds) {
@@ -501,7 +525,7 @@
                 };
             });
             items.forEach(it => {
-                const vid = type === 'activity' ? (it.contentDetails.upload?.videoId || it.contentDetails.recommendation?.resourceId?.videoId) : it.id.videoId;
+                const vid = type === 'activity' ? (it.contentDetails.upload?.videoId || it.contentDetails.recommendation?.resourceId?.videoId) : (it.id.videoId || it.id);
                 it.extraStats = statsMap[vid];
             });
         }
@@ -513,20 +537,31 @@
         if (isFetching || !query) return;
         isFetching = true;
         try {
-            const res = await gapi.client.youtube.search.list({
-                q: query, part: 'snippet', type: 'video', maxResults: 25, pageToken: nextPageToken
-            });
+            const params = {
+                q: query, 
+                part: 'snippet', 
+                type: 'video', 
+                maxResults: 25, 
+                pageToken: nextPageToken
+            };
+            if (currentCategory === 'music') params.videoCategoryId = '10';
+
+            const res = await gapi.client.youtube.search.list(params);
             let items = res.result.items;
             nextPageToken = res.result.nextPageToken || '';
+            
             const ids = items.map(it => it.id.videoId).join(',');
-            const statsRes = await gapi.client.youtube.videos.list({ part: 'contentDetails,statistics', id: ids });
-            const statsMap = {};
-            statsRes.result.items.forEach(v => statsMap[v.id] = {
-                duration: formatDuration(v.contentDetails.duration),
-                likes: v.statistics.likeCount,
-                views: v.statistics.viewCount
-            });
-            items.forEach(it => it.extraStats = statsMap[it.id.videoId]);
+            if (ids) {
+                const statsRes = await gapi.client.youtube.videos.list({ part: 'contentDetails,statistics', id: ids });
+                const statsMap = {};
+                statsRes.result.items.forEach(v => statsMap[v.id] = {
+                    duration: formatDuration(v.contentDetails.duration),
+                    likes: v.statistics.likeCount,
+                    views: v.statistics.viewCount
+                });
+                items.forEach(it => it.extraStats = statsMap[it.id.videoId]);
+            }
+
             if (append) activeList = activeList.concat(items);
             else activeList = items;
             renderVirtualItems();
@@ -537,17 +572,30 @@
     function setCategory(cat) {
         currentCategory = cat;
         nextPageToken = '';
+        currentSearchQuery = ''; 
+        document.getElementById('search-input').value = '';
         activeList = [];
+        
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
         document.getElementById(`tab-${cat}`).classList.add('active');
+        
         if (cat === 'favs') { activeList = [...favorites]; renderVirtualItems(); }
         else if (cat === 'history') { activeList = [...historyList]; renderVirtualItems(); }
         else if (gapi.client.getToken()) fetchPersonalizedData();
+        
         document.getElementById('viewport').scrollTop = 0;
     }
 
     function handleAuthClick() { tokenClient.requestAccessToken({prompt: gapi.client.getToken() ? '' : 'consent'}); }
-    function handleSearch(e) { if (e.key === 'Enter') { currentSearchQuery = e.target.value; nextPageToken = ''; performSearch(currentSearchQuery); } }
+    
+    function handleSearch(e) { 
+        if (e.key === 'Enter') { 
+            currentSearchQuery = e.target.value; 
+            nextPageToken = ''; 
+            activeList = []; 
+            performSearch(currentSearchQuery); 
+        } 
+    }
 
     function formatDuration(duration) {
         if (!duration) return "0:00";
@@ -587,15 +635,21 @@
             historyList.unshift(item);
             if (historyList.length > 200) historyList.pop();
             localStorage.setItem('yt_history', JSON.stringify(historyList));
+            if (currentCategory === 'history') {
+                activeList = [...historyList];
+                renderVirtualItems();
+            }
         }
     }
 
     function shuffleCurrentList() { if (activeList.length < 2) return; activeList.sort(() => Math.random() - 0.5); renderVirtualItems(); }
+    
     function showSettings() { 
         document.getElementById('input-client-id').value = CLIENT_ID;
         document.getElementById('input-api-key').value = API_KEY;
         document.getElementById('modal-settings').style.display = 'flex'; 
     }
+    
     function saveSettings() {
         localStorage.setItem('yt_client_id', document.getElementById('input-client-id').value.trim());
         localStorage.setItem('yt_api_key', document.getElementById('input-api-key').value.trim());
