@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Media Tool - Virtual Scroll Edition</title>
+    <title>My Media Tool - Personalized Edition</title>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="https://apis.google.com/js/api.js"></script>
     <style>
@@ -19,14 +19,6 @@
             --heart-color: #ff4757;
             --border-color: rgba(255, 255, 255, 0.1);
             --scrollbar-thumb: #475569;
-        }
-
-        .music-mode {
-            --accent-color: #1db954;
-            --bg-color: #050505;
-            --sidebar-color: #121212;
-            --item-hover: #282828;
-            --scrollbar-thumb: #3f3f3f;
         }
 
         body {
@@ -72,6 +64,19 @@
             margin-bottom: 15px;
         }
 
+        #user-info {
+            display: none;
+            align-items: center;
+            gap: 10px;
+        }
+
+        #user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 2px solid var(--accent-color);
+        }
+
         #auth-btn {
             background-color: var(--accent-color);
             color: white;
@@ -103,19 +108,21 @@
             background: rgba(0,0,0,0.2);
             padding: 4px;
             border-radius: 10px;
-            gap: 4px;
+            gap: 2px;
+            overflow-x: auto;
         }
 
         .tab {
             flex: 1;
             text-align: center;
-            padding: 8px 4px;
+            padding: 8px 2px;
             cursor: pointer;
             border-radius: 6px;
-            font-size: 11px;
+            font-size: 9px;
             font-weight: 700;
             text-transform: uppercase;
             color: var(--secondary-text);
+            white-space: nowrap;
         }
 
         .tab.active { background: var(--accent-color); color: white; }
@@ -140,52 +147,6 @@
             outline: none;
         }
 
-        #clear-history-btn {
-            display: none;
-            background: rgba(255, 71, 87, 0.1);
-            color: var(--heart-color);
-            border: 1px solid var(--heart-color);
-            padding: 8px 12px;
-            border-radius: 8px;
-            font-size: 11px;
-            font-weight: bold;
-            cursor: pointer;
-            white-space: nowrap;
-        }
-        #clear-history-btn.confirming {
-            background: var(--heart-color);
-            color: white;
-        }
-
-        /* TOAST NOTIFICATION */
-        #undo-toast {
-            position: absolute;
-            bottom: -60px;
-            left: 20px;
-            right: 20px;
-            background: #334155;
-            color: white;
-            padding: 12px 20px;
-            border-radius: 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
-            transition: bottom 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            z-index: 100;
-        }
-        #undo-toast.show { bottom: 20px; }
-        #undo-btn {
-            color: var(--accent-color);
-            font-weight: 800;
-            text-transform: uppercase;
-            cursor: pointer;
-            font-size: 12px;
-            border: none;
-            background: none;
-        }
-
-        /* VIRTUAL SCROLL CONTAINERS */
         #viewport {
             flex: 1;
             overflow-y: auto;
@@ -221,7 +182,7 @@
             position: absolute;
             left: 20px;
             right: 20px;
-            height: 100px; /* Increased height for stats */
+            height: 100px;
             display: flex;
             gap: 12px;
             padding: 8px;
@@ -330,38 +291,38 @@
 <div id="sidebar">
     <div class="header">
         <div class="top-row">
-            <button id="auth-btn" onclick="handleAuthClick()">Connect Account</button>
+            <button id="auth-btn" onclick="handleAuthClick()">Connect YouTube</button>
+            <div id="user-info">
+                <img id="user-avatar" src="" alt="">
+                <span id="user-name" style="font-size: 12px; font-weight: bold;"></span>
+            </div>
             <div class="btn-group">
                 <button class="icon-btn" onclick="shuffleCurrentList()" title="Shuffle">🔀</button>
                 <button class="icon-btn" onclick="showSettings()" title="Settings">⚙️</button>
             </div>
         </div>
         <div class="tabs">
-            <div id="tab-video" class="tab active" onclick="setCategory('video')">Video</div>
+            <div id="tab-home" class="tab active" onclick="setCategory('home')">Home</div>
             <div id="tab-music" class="tab" onclick="setCategory('music')">Music</div>
+            <div id="tab-playlists" class="tab" onclick="setCategory('playlists')">Lists</div>
             <div id="tab-favs" class="tab" onclick="setCategory('favs')">Favs</div>
             <div id="tab-history" class="tab" onclick="setCategory('history')">History</div>
         </div>
     </div>
     <div class="search-box">
-        <input type="text" id="search-input" placeholder="Search..." onkeypress="handleSearch(event)">
-        <button id="clear-history-btn" onclick="handleClearHistory()">Clear History</button>
+        <input type="text" id="search-input" placeholder="Search YouTube..." onkeypress="handleSearch(event)">
     </div>
     
     <div id="viewport">
         <div id="scroll-content"></div>
         <div id="visible-items"></div>
     </div>
-
-    <div id="undo-toast">
-        <span style="font-size: 13px;">History cleared</span>
-        <button id="undo-btn" onclick="undoClearHistory()">Undo</button>
-    </div>
 </div>
 
 <div id="modal-settings" class="modal-overlay">
     <div class="modal-content">
         <h3>API Setup</h3>
+        <p style="font-size: 11px; color: var(--secondary-text); margin-bottom: 10px;">Requires 'YouTube Data API v3' enabled in Google Cloud Console.</p>
         <input type="text" id="input-client-id" placeholder="Client ID" style="width:100%; margin-bottom:10px; padding:10px; background:#000; color:#fff; border:1px solid #444;">
         <input type="password" id="input-api-key" placeholder="API Key" style="width:100%; margin-bottom:15px; padding:10px; background:#000; color:#fff; border:1px solid #444;">
         <button onclick="saveSettings()" style="width:100%; padding:10px; background:var(--accent-color); color:white; border:none; cursor:pointer; font-weight:bold;">Save & Reload</button>
@@ -371,17 +332,13 @@
 <script>
     let CLIENT_ID = localStorage.getItem('yt_client_id') || '';
     let API_KEY = localStorage.getItem('yt_api_key') || '';
-    let tokenClient, player, currentCategory = 'video';
+    let tokenClient, player, currentCategory = 'home';
     
     let activeList = [];
     let nextPageToken = '';
     let isFetching = false;
     let currentSearchQuery = '';
-    let isConfirmingClear = false;
-    let tempHistoryBuffer = null;
-    let undoTimeout = null;
 
-    // VIRTUAL SCROLL SETTINGS
     const ITEM_HEIGHT = 110; 
     const BUFFER_COUNT = 5;
 
@@ -399,12 +356,32 @@
     function initGapi() {
         gapi.load('client', async () => {
             try {
-                await gapi.client.init({ apiKey: API_KEY, discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest"] });
-                tokenClient = google.accounts.oauth2.initTokenClient({
-                    client_id: CLIENT_ID, scope: "https://www.googleapis.com/auth/youtube.readonly", callback: ''
+                await gapi.client.init({ 
+                    apiKey: API_KEY, 
+                    discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest"] 
                 });
-            } catch(e) {}
+                tokenClient = google.accounts.oauth2.initTokenClient({
+                    client_id: CLIENT_ID, 
+                    scope: "https://www.googleapis.com/auth/youtube.readonly", 
+                    callback: handleAuthResponse
+                });
+            } catch(e) { console.error("GAPI Init Error", e); }
         });
+    }
+
+    async function handleAuthResponse(resp) {
+        if (resp.error) return;
+        document.getElementById('auth-btn').style.display = 'none';
+        document.getElementById('user-info').style.display = 'flex';
+        try {
+            const channelRes = await gapi.client.youtube.channels.list({ part: 'snippet', mine: true });
+            if (channelRes.result.items.length) {
+                const user = channelRes.result.items[0].snippet;
+                document.getElementById('user-avatar').src = user.thumbnails.default.url;
+                document.getElementById('user-name').innerText = user.title;
+            }
+            setCategory('home');
+        } catch(e) { console.error("Profile Fetch Error", e); }
     }
 
     function setupVirtualScroll() {
@@ -412,64 +389,32 @@
         viewport.addEventListener('scroll', () => {
             renderVirtualItems();
             const scrollBottom = viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight;
-            if (scrollBottom < 300) {
-                if (!isFetching && nextPageToken && (currentCategory === 'video' || currentCategory === 'music')) {
-                    performSearch(currentSearchQuery, true);
-                }
+            if (scrollBottom < 300 && !isFetching && nextPageToken) {
+                if (['home', 'playlists', 'music'].includes(currentCategory)) fetchPersonalizedData(true);
+                else if (currentSearchQuery) performSearch(currentSearchQuery, true);
             }
         });
-    }
-
-    /**
-     * Converts ISO 8601 duration (PT4M20S) to readable format (4:20)
-     */
-    function formatDuration(duration) {
-        if (!duration) return "0:00";
-        const match = duration.match(/PT(\d+H)?(\d+M)?(\d+S)?/);
-        const hours = (parseInt(match[1]) || 0);
-        const minutes = (parseInt(match[2]) || 0);
-        const seconds = (parseInt(match[3]) || 0);
-        
-        let result = "";
-        if (hours > 0) result += hours + ":";
-        result += (hours > 0 && minutes < 10 ? "0" + minutes : minutes) + ":";
-        result += (seconds < 10 ? "0" + seconds : seconds);
-        return result;
-    }
-
-    /**
-     * Formats numbers to K/M suffixes
-     */
-    function formatCount(num) {
-        if (num === undefined || num === null) return "0";
-        const n = parseInt(num);
-        if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
-        if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
-        return n.toString();
     }
 
     function renderVirtualItems() {
         const viewport = document.getElementById('viewport');
         const visibleContainer = document.getElementById('visible-items');
         const scrollContent = document.getElementById('scroll-content');
-        
         scrollContent.style.height = `${activeList.length * ITEM_HEIGHT}px`;
 
         const scrollTop = viewport.scrollTop;
         const viewportHeight = viewport.clientHeight;
-
         const startIndex = Math.max(0, Math.floor(scrollTop / ITEM_HEIGHT) - BUFFER_COUNT);
         const endIndex = Math.min(activeList.length - 1, Math.ceil((scrollTop + viewportHeight) / ITEM_HEIGHT) + BUFFER_COUNT);
 
         visibleContainer.innerHTML = '';
-
         for (let i = startIndex; i <= endIndex; i++) {
             const item = activeList[i];
-            const vid = item.id.videoId || item.id || item.contentDetails?.videoId;
-            const isFav = favorites.some(f => (f.id.videoId || f.id || f.contentDetails?.videoId) === vid);
-            
-            // Access stored extra stats (duration, likes)
-            const stats = item.extraStats || { duration: '?:??', likes: '0', dislikes: '0', views: '0' };
+            const vid = item.id?.videoId || item.snippet?.resourceId?.videoId || item.id;
+            if (!vid || typeof vid !== 'string') continue;
+
+            const isFav = favorites.some(f => (f.id?.videoId || f.snippet?.resourceId?.videoId || f.id) === vid);
+            const stats = item.extraStats || { duration: '--:--', likes: '0', views: '0' };
 
             const card = document.createElement('div');
             card.className = 'item-card';
@@ -478,15 +423,15 @@
             
             card.innerHTML = `
                 <div class="thumb-container">
-                    <img src="${item.snippet.thumbnails.medium.url}">
+                    <img src="${item.snippet.thumbnails?.medium?.url || item.snippet.thumbnails?.default?.url}">
                     <div class="duration-badge">${stats.duration}</div>
                 </div>
                 <div class="item-details">
                     <div class="item-title" title="${item.snippet.title}">${item.snippet.title}</div>
-                    <div class="item-channel">${item.snippet.channelTitle}</div>
+                    <div class="item-channel">${item.snippet.channelTitle || 'YouTube'}</div>
                     <div class="item-stats">
-                        <div class="stat-item" title="Likes">👍 ${formatCount(stats.likes)}</div>
-                        <div class="stat-item" title="Views">👁️ ${formatCount(stats.views)}</div>
+                        <div class="stat-item">👍 ${formatCount(stats.likes)}</div>
+                        <div class="stat-item">👁️ ${formatCount(stats.views)}</div>
                     </div>
                 </div>
                 <button class="fav-btn ${isFav ? 'active' : ''}" onclick="event.stopPropagation(); toggleFav('${vid}', ${JSON.stringify(item).replace(/"/g, '&quot;')})">
@@ -497,21 +442,96 @@
         }
     }
 
-    function showSettings() { 
-        document.getElementById('input-client-id').value = CLIENT_ID;
-        document.getElementById('input-api-key').value = API_KEY;
-        document.getElementById('modal-settings').style.display = 'flex'; 
-    }
-    
-    function saveSettings() {
-        localStorage.setItem('yt_client_id', document.getElementById('input-client-id').value.trim());
-        localStorage.setItem('yt_api_key', document.getElementById('input-api-key').value.trim());
-        location.reload();
+    async function fetchPersonalizedData(append = false) {
+        if (isFetching || !gapi.client.getToken()) return;
+        isFetching = true;
+        try {
+            let res;
+            if (currentCategory === 'home') {
+                res = await gapi.client.youtube.activities.list({
+                    part: 'snippet,contentDetails',
+                    mine: true,
+                    maxResults: 25,
+                    pageToken: nextPageToken
+                });
+                let items = res.result.items.filter(it => it.contentDetails.upload || it.contentDetails.recommendation);
+                await enrichWithStats(items, append, 'activity');
+            } else if (currentCategory === 'music') {
+                // Fetch music specifically by category 10 (Music)
+                res = await gapi.client.youtube.search.list({
+                    part: 'snippet',
+                    type: 'video',
+                    videoCategoryId: '10',
+                    maxResults: 25,
+                    pageToken: nextPageToken,
+                    q: '' 
+                });
+                await enrichWithStats(res.result.items, append, 'search');
+            } else if (currentCategory === 'playlists') {
+                res = await gapi.client.youtube.playlists.list({
+                    part: 'snippet,contentDetails',
+                    mine: true,
+                    maxResults: 25,
+                    pageToken: nextPageToken
+                });
+                const items = res.result.items;
+                if (append) activeList = activeList.concat(items);
+                else activeList = items;
+            }
+            nextPageToken = res.result.nextPageToken || '';
+            renderVirtualItems();
+        } catch (e) { console.error("Fetch Error", e); }
+        finally { isFetching = false; }
     }
 
-    function handleAuthClick() {
-        tokenClient.callback = async (resp) => { if (!resp.error) { document.getElementById('auth-btn').innerText = "Logged In"; performSearch(''); } };
-        tokenClient.requestAccessToken({prompt: gapi.client.getToken() ? '' : 'consent'});
+    async function enrichWithStats(items, append, type) {
+        const videoIds = items.map(it => {
+            if (type === 'activity') return it.contentDetails.upload?.videoId || it.contentDetails.recommendation?.resourceId?.videoId;
+            return it.id.videoId;
+        }).filter(id => !!id).join(',');
+
+        if (videoIds) {
+            const statsRes = await gapi.client.youtube.videos.list({ part: 'contentDetails,statistics', id: videoIds });
+            const statsMap = {};
+            statsRes.result.items.forEach(v => {
+                statsMap[v.id] = {
+                    duration: formatDuration(v.contentDetails.duration),
+                    likes: v.statistics.likeCount,
+                    views: v.statistics.viewCount
+                };
+            });
+            items.forEach(it => {
+                const vid = type === 'activity' ? (it.contentDetails.upload?.videoId || it.contentDetails.recommendation?.resourceId?.videoId) : it.id.videoId;
+                it.extraStats = statsMap[vid];
+            });
+        }
+        if (append) activeList = activeList.concat(items);
+        else activeList = items;
+    }
+
+    async function performSearch(query, append = false) {
+        if (isFetching || !query) return;
+        isFetching = true;
+        try {
+            const res = await gapi.client.youtube.search.list({
+                q: query, part: 'snippet', type: 'video', maxResults: 25, pageToken: nextPageToken
+            });
+            let items = res.result.items;
+            nextPageToken = res.result.nextPageToken || '';
+            const ids = items.map(it => it.id.videoId).join(',');
+            const statsRes = await gapi.client.youtube.videos.list({ part: 'contentDetails,statistics', id: ids });
+            const statsMap = {};
+            statsRes.result.items.forEach(v => statsMap[v.id] = {
+                duration: formatDuration(v.contentDetails.duration),
+                likes: v.statistics.likeCount,
+                views: v.statistics.viewCount
+            });
+            items.forEach(it => it.extraStats = statsMap[it.id.videoId]);
+            if (append) activeList = activeList.concat(items);
+            else activeList = items;
+            renderVirtualItems();
+        } catch (e) { console.error(e); }
+        finally { isFetching = false; }
     }
 
     function setCategory(cat) {
@@ -520,137 +540,38 @@
         activeList = [];
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
         document.getElementById(`tab-${cat}`).classList.add('active');
-        
-        const clearBtn = document.getElementById('clear-history-btn');
-        clearBtn.style.display = (cat === 'history') ? 'block' : 'none';
-        resetClearConfirmation();
-
-        if (cat === 'music') document.body.classList.add('music-mode');
-        else document.body.classList.remove('music-mode');
-        
-        if (cat === 'favs') {
-            activeList = [...favorites];
-            renderVirtualItems();
-        } else if (cat === 'history') {
-            activeList = [...historyList];
-            renderVirtualItems();
-        } else {
-            performSearch(document.getElementById('search-input').value || '');
-        }
+        if (cat === 'favs') { activeList = [...favorites]; renderVirtualItems(); }
+        else if (cat === 'history') { activeList = [...historyList]; renderVirtualItems(); }
+        else if (gapi.client.getToken()) fetchPersonalizedData();
         document.getElementById('viewport').scrollTop = 0;
     }
 
-    async function performSearch(query, append = false) {
-        if (isFetching) return;
-        isFetching = true;
+    function handleAuthClick() { tokenClient.requestAccessToken({prompt: gapi.client.getToken() ? '' : 'consent'}); }
+    function handleSearch(e) { if (e.key === 'Enter') { currentSearchQuery = e.target.value; nextPageToken = ''; performSearch(currentSearchQuery); } }
 
-        let params = { 
-            q: query || (currentCategory === 'music' ? 'top music hits' : 'trending'), 
-            part: 'snippet', 
-            type: 'video', 
-            maxResults: 25, 
-            pageToken: nextPageToken 
-        };
-        
-        if (currentCategory === 'music') params.videoCategoryId = '10';
-
-        try {
-            const res = await gapi.client.youtube.search.list(params);
-            let searchItems = res.result.items;
-            nextPageToken = res.result.nextPageToken || '';
-            
-            // Double-Check Logic: Fetch extra metadata (durations and stats)
-            const videoIds = searchItems.map(item => item.id.videoId).filter(id => !!id).join(',');
-            if (videoIds) {
-                const statsRes = await gapi.client.youtube.videos.list({
-                    part: 'contentDetails,statistics',
-                    id: videoIds
-                });
-                
-                const statsMap = {};
-                statsRes.result.items.forEach(v => {
-                    statsMap[v.id] = {
-                        duration: formatDuration(v.contentDetails.duration),
-                        likes: v.statistics.likeCount || 0,
-                        views: v.statistics.viewCount || 0
-                    };
-                });
-
-                // Merge stats into search items
-                searchItems = searchItems.map(item => ({
-                    ...item,
-                    extraStats: statsMap[item.id.videoId] || { duration: '?:??', likes: '0', views: '0' }
-                }));
-            }
-
-            if (append) activeList = activeList.concat(searchItems);
-            else activeList = searchItems;
-            
-            renderVirtualItems();
-        } catch (e) {
-            console.error("Search Error:", e);
-        } finally {
-            isFetching = false;
-        }
+    function formatDuration(duration) {
+        if (!duration) return "0:00";
+        const match = duration.match(/PT(\d+H)?(\d+M)?(\d+S)?/);
+        const hours = (parseInt(match[1]) || 0);
+        const minutes = (parseInt(match[2]) || 0);
+        const seconds = (parseInt(match[3]) || 0);
+        let result = "";
+        if (hours > 0) result += hours + ":";
+        result += (hours > 0 && minutes < 10 ? "0" + minutes : minutes) + ":";
+        result += (seconds < 10 ? "0" + seconds : seconds);
+        return result;
     }
 
-    function handleClearHistory() {
-        const btn = document.getElementById('clear-history-btn');
-        if (!isConfirmingClear) {
-            isConfirmingClear = true;
-            btn.innerText = "Are you sure?";
-            btn.classList.add('confirming');
-            setTimeout(() => { if(isConfirmingClear) resetClearConfirmation(); }, 3000);
-        } else {
-            tempHistoryBuffer = [...historyList];
-            historyList = [];
-            localStorage.setItem('yt_history', JSON.stringify([]));
-            activeList = [];
-            renderVirtualItems();
-            resetClearConfirmation();
-            const toast = document.getElementById('undo-toast');
-            toast.classList.add('show');
-            if (undoTimeout) clearTimeout(undoTimeout);
-            undoTimeout = setTimeout(() => {
-                toast.classList.remove('show');
-                tempHistoryBuffer = null;
-            }, 4000);
-        }
-    }
-
-    function undoClearHistory() {
-        if (tempHistoryBuffer) {
-            historyList = tempHistoryBuffer;
-            localStorage.setItem('yt_history', JSON.stringify(historyList));
-            if (currentCategory === 'history') {
-                activeList = [...historyList];
-                renderVirtualItems();
-            }
-            document.getElementById('undo-toast').classList.remove('show');
-            tempHistoryBuffer = null;
-            if (undoTimeout) clearTimeout(undoTimeout);
-        }
-    }
-
-    function resetClearConfirmation() {
-        isConfirmingClear = false;
-        const btn = document.getElementById('clear-history-btn');
-        if (btn) {
-            btn.innerText = "Clear History";
-            btn.classList.remove('confirming');
-        }
-    }
-
-    function handleSearch(e) { 
-        if (e.key === 'Enter') {
-            currentSearchQuery = e.target.value;
-            nextPageToken = '';
-            performSearch(currentSearchQuery); 
-        }
+    function formatCount(num) {
+        if (!num) return "0";
+        const n = parseInt(num);
+        if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
+        if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
+        return n.toString();
     }
 
     function toggleFav(id, item) {
-        const idx = favorites.findIndex(f => (f.id.videoId || f.id || f.contentDetails?.videoId) === id);
+        const idx = favorites.findIndex(f => (f.id?.videoId || f.snippet?.resourceId?.videoId || f.id) === id);
         if (idx > -1) favorites.splice(idx, 1);
         else favorites.unshift(item);
         localStorage.setItem('yt_favorites', JSON.stringify(favorites));
@@ -661,24 +582,24 @@
     function playItem(id, item) { 
         if (player?.loadVideoById) {
             player.loadVideoById(id);
-            const exists = historyList.findIndex(h => (h.id.videoId || h.id || h.contentDetails?.videoId) === id);
+            const exists = historyList.findIndex(h => (h.id?.videoId || h.snippet?.resourceId?.videoId || h.id) === id);
             if (exists > -1) historyList.splice(exists, 1);
             historyList.unshift(item);
             if (historyList.length > 200) historyList.pop();
             localStorage.setItem('yt_history', JSON.stringify(historyList));
-            if (currentCategory === 'history') {
-                activeList = [...historyList];
-                renderVirtualItems();
-            }
         }
     }
 
-    function shuffleCurrentList() {
-        if (activeList.length < 2) return;
-        activeList.sort(() => Math.random() - 0.5);
-        renderVirtualItems();
-        const first = activeList[0];
-        playItem(first.id.videoId || first.id || first.contentDetails?.videoId, first);
+    function shuffleCurrentList() { if (activeList.length < 2) return; activeList.sort(() => Math.random() - 0.5); renderVirtualItems(); }
+    function showSettings() { 
+        document.getElementById('input-client-id').value = CLIENT_ID;
+        document.getElementById('input-api-key').value = API_KEY;
+        document.getElementById('modal-settings').style.display = 'flex'; 
+    }
+    function saveSettings() {
+        localStorage.setItem('yt_client_id', document.getElementById('input-client-id').value.trim());
+        localStorage.setItem('yt_api_key', document.getElementById('input-api-key').value.trim());
+        location.reload();
     }
 
     var tag = document.createElement('script'); tag.src = "https://www.youtube.com/iframe_api";
