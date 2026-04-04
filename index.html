@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Media Tool - Personalized Edition</title>
+    <title>Personal Media Manager</title>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="https://apis.google.com/js/api.js"></script>
     <style>
@@ -18,7 +18,6 @@
             --player-bg: #000000;
             --heart-color: #ff4757;
             --border-color: rgba(255, 255, 255, 0.1);
-            --scrollbar-thumb: #475569;
         }
 
         body {
@@ -33,14 +32,13 @@
         }
 
         #sidebar {
-            width: 400px;
+            width: 380px;
             height: 100vh;
             background-color: var(--sidebar-color);
             display: flex;
             flex-direction: column;
             border-right: 1px solid var(--border-color);
             flex-shrink: 0;
-            position: relative;
         }
 
         #display-area { 
@@ -53,7 +51,6 @@
 
         .header {
             padding: 20px;
-            flex-shrink: 0;
             border-bottom: 1px solid var(--border-color);
         }
 
@@ -64,19 +61,6 @@
             margin-bottom: 15px;
         }
 
-        #user-info {
-            display: none;
-            align-items: center;
-            gap: 10px;
-        }
-
-        #user-avatar {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            border: 2px solid var(--accent-color);
-        }
-
         #auth-btn {
             background-color: var(--accent-color);
             color: white;
@@ -85,22 +69,7 @@
             border-radius: 20px;
             cursor: pointer;
             font-weight: 600;
-            font-size: 12px;
-        }
-
-        .btn-group { display: flex; gap: 8px; }
-
-        .icon-btn {
-            font-size: 18px;
-            cursor: pointer;
-            background: rgba(255,255,255,0.05);
-            border: 1px solid var(--border-color);
-            color: var(--text-color);
-            padding: 6px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            font-size: 13px;
         }
 
         .tabs {
@@ -109,147 +78,74 @@
             padding: 4px;
             border-radius: 10px;
             gap: 2px;
-            overflow-x: auto;
         }
 
         .tab {
             flex: 1;
             text-align: center;
-            padding: 8px 2px;
+            padding: 8px 0;
             cursor: pointer;
             border-radius: 6px;
-            font-size: 9px;
+            font-size: 11px;
             font-weight: 700;
             text-transform: uppercase;
             color: var(--secondary-text);
-            white-space: nowrap;
         }
 
         .tab.active { background: var(--accent-color); color: white; }
 
-        .search-box { 
-            padding: 15px 20px; 
-            flex-shrink: 0;
-            background: rgba(0,0,0,0.1);
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-
+        .search-box { padding: 15px 20px; }
         #search-input {
-            flex: 1;
+            width: 100%;
             padding: 10px 15px;
             border-radius: 8px;
             border: 1px solid var(--border-color);
             background: var(--bg-color);
             color: var(--text-color);
-            box-sizing: border-box;
             outline: none;
         }
 
         #viewport {
             flex: 1;
             overflow-y: auto;
-            position: relative;
-            scrollbar-width: thin;
-            scrollbar-color: var(--scrollbar-thumb) transparent;
-        }
-
-        #viewport::-webkit-scrollbar { width: 8px; }
-        #viewport::-webkit-scrollbar-thumb {
-            background-color: var(--scrollbar-thumb);
-            border-radius: 20px;
-        }
-
-        #scroll-content {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            pointer-events: none;
-        }
-
-        #visible-items {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            padding: 0 20px;
-            box-sizing: border-box;
+            padding: 0 20px 20px 20px;
         }
 
         .item-card {
-            position: absolute;
-            left: 20px;
-            right: 20px;
-            height: 100px;
             display: flex;
             gap: 12px;
-            padding: 8px;
+            padding: 10px;
             background: var(--card-bg);
             border-radius: 8px;
+            margin-bottom: 10px;
             cursor: pointer;
-            align-items: center;
-            border: 1px solid transparent;
             transition: background 0.2s;
+            position: relative;
         }
-        .item-card:hover { 
-            background: var(--item-hover);
-            border-color: var(--border-color);
-        }
+        .item-card:hover { background: var(--item-hover); }
 
         .thumb-container {
-            position: relative;
             width: 120px;
             height: 68px;
             flex-shrink: 0;
-        }
-
-        .item-card img {
-            width: 100%;
-            height: 100%;
             border-radius: 4px;
-            object-fit: cover;
+            overflow: hidden;
         }
-
-        .duration-badge {
-            position: absolute;
-            bottom: 4px;
-            right: 4px;
-            background: rgba(0,0,0,0.8);
-            color: white;
-            font-size: 10px;
-            padding: 2px 4px;
-            border-radius: 2px;
-            font-weight: bold;
-        }
+        .thumb-container img { width: 100%; height: 100%; object-fit: cover; }
 
         .item-details { flex: 1; min-width: 0; }
-        .item-title { 
-            font-size: 13px; 
-            font-weight: 500; 
-            white-space: nowrap; 
-            overflow: hidden; 
-            text-overflow: ellipsis;
-            margin-bottom: 2px;
-        }
-        .item-channel { font-size: 11px; color: var(--secondary-text); margin-bottom: 4px; }
-        
-        .item-stats {
-            display: flex;
-            gap: 12px;
-            font-size: 10px;
-            color: var(--secondary-text);
-            margin-top: 2px;
-        }
-        .stat-item { display: flex; align-items: center; gap: 4px; }
+        .item-title { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .item-channel { font-size: 11px; color: var(--secondary-text); margin-top: 4px; }
 
         .fav-btn {
+            position: absolute;
+            right: 10px;
+            bottom: 10px;
             background: none;
             border: none;
-            font-size: 16px;
             cursor: pointer;
             color: var(--secondary-text);
+            font-size: 16px;
         }
         .fav-btn.active { color: var(--heart-color); }
 
@@ -260,362 +156,148 @@
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.9);
-            z-index: 200;
+            z-index: 100;
             align-items: center;
             justify-content: center;
         }
-
         .modal-content {
             background: var(--sidebar-color);
             padding: 30px;
             border-radius: 12px;
             width: 350px;
-            border: 1px solid var(--border-color);
+            text-align: center;
         }
-
-        @media (max-width: 900px) {
-            body { flex-direction: column; }
-            #sidebar { width: 100%; height: 60vh; }
-            #display-area { height: 40vh; flex: none; }
+        .modal-content input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            background: #000;
+            color: #fff;
+            border: 1px solid #444;
         }
     </style>
 </head>
 <body>
 
 <div id="display-area">
-    <div id="video-container">
-        <div id="player"></div>
-    </div>
+    <div id="video-container"><div id="player"></div></div>
 </div>
 
 <div id="sidebar">
     <div class="header">
         <div class="top-row">
-            <button id="auth-btn" onclick="handleAuthClick()">Connect YouTube</button>
-            <div id="user-info">
-                <img id="user-avatar" src="" alt="">
-                <span id="user-name" style="font-size: 12px; font-weight: bold;"></span>
-            </div>
-            <div class="btn-group">
-                <button class="icon-btn" onclick="shuffleCurrentList()" title="Shuffle">🔀</button>
-                <button class="icon-btn" onclick="showSettings()" title="Settings">⚙️</button>
-            </div>
+            <h2 style="margin:0; font-size: 18px;">Media Tool</h2>
+            <button id="auth-btn" onclick="handleAuthClick()">Connect</button>
         </div>
         <div class="tabs">
-            <div id="tab-home" class="tab active" onclick="setCategory('home')">Home</div>
-            <div id="tab-music" class="tab" onclick="setCategory('music')">Music</div>
-            <div id="tab-playlists" class="tab" onclick="setCategory('playlists')">Lists</div>
-            <div id="tab-favs" class="tab" onclick="setCategory('favs')">Favs</div>
+            <div id="tab-playlists" class="tab active" onclick="setCategory('playlists')">Playlists</div>
             <div id="tab-history" class="tab" onclick="setCategory('history')">History</div>
+            <div id="tab-favs" class="tab" onclick="setCategory('favs')">Favorites</div>
         </div>
     </div>
+    
     <div class="search-box">
-        <input type="text" id="search-input" placeholder="Search YouTube..." onkeypress="handleSearch(event)">
+        <input type="text" id="search-input" placeholder="Search in category..." oninput="filterItems()">
     </div>
     
-    <div id="viewport">
-        <div id="scroll-content"></div>
-        <div id="visible-items"></div>
-    </div>
+    <div id="viewport"></div>
 </div>
 
 <div id="modal-settings" class="modal-overlay">
     <div class="modal-content">
-        <h3>API Setup</h3>
-        <p style="font-size: 11px; color: var(--secondary-text); margin-bottom: 10px;">Requires 'YouTube Data API v3' enabled in Google Cloud Console.</p>
-        <input type="text" id="input-client-id" placeholder="Client ID" style="width:100%; margin-bottom:10px; padding:10px; background:#000; color:#fff; border:1px solid #444;">
-        <input type="password" id="input-api-key" placeholder="API Key" style="width:100%; margin-bottom:15px; padding:10px; background:#000; color:#fff; border:1px solid #444;">
-        <button onclick="saveSettings()" style="width:100%; padding:10px; background:var(--accent-color); color:white; border:none; cursor:pointer; font-weight:bold;">Save & Reload</button>
+        <h3>API Configuration</h3>
+        <input type="text" id="input-client-id" placeholder="Client ID">
+        <input type="password" id="input-api-key" placeholder="API Key">
+        <button onclick="saveSettings()" style="width:100%; padding:10px; background:var(--accent-color); color:white; border:none; cursor:pointer;">Save & Reload</button>
     </div>
 </div>
 
 <script>
     let CLIENT_ID = localStorage.getItem('yt_client_id') || '';
     let API_KEY = localStorage.getItem('yt_api_key') || '';
-    let tokenClient, player, currentCategory = 'home';
+    let tokenClient, player, currentCategory = 'playlists';
     
-    let activeList = [];
-    let nextPageToken = '';
-    let isFetching = false;
-    let currentSearchQuery = '';
-
-    const ITEM_HEIGHT = 110; 
-    const BUFFER_COUNT = 5;
-
+    let fullList = []; 
     let historyList = JSON.parse(localStorage.getItem('yt_history') || '[]');
     let favorites = JSON.parse(localStorage.getItem('yt_favorites') || '[]');
 
     window.onload = function() {
-        if (!CLIENT_ID || !API_KEY) showSettings();
-        else {
-            initGapi();
-            setupVirtualScroll();
-        }
+        if (!CLIENT_ID || !API_KEY) document.getElementById('modal-settings').style.display = 'flex';
+        else initGapi();
     };
 
     function initGapi() {
         gapi.load('client', async () => {
-            try {
-                await gapi.client.init({ 
-                    apiKey: API_KEY, 
-                    discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest"] 
-                });
-                tokenClient = google.accounts.oauth2.initTokenClient({
-                    client_id: CLIENT_ID, 
-                    scope: "https://www.googleapis.com/auth/youtube.readonly", 
-                    callback: handleAuthResponse
-                });
-            } catch(e) { console.error("GAPI Init Error", e); }
+            await gapi.client.init({ 
+                apiKey: API_KEY, 
+                discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest"] 
+            });
+            tokenClient = google.accounts.oauth2.initTokenClient({
+                client_id: CLIENT_ID, 
+                scope: "https://www.googleapis.com/auth/youtube.readonly", 
+                callback: (resp) => {
+                    if (resp.access_token) {
+                        document.getElementById('auth-btn').innerText = "Connected";
+                        fetchPlaylists();
+                    }
+                }
+            });
         });
     }
 
-    async function handleAuthResponse(resp) {
-        if (resp.error) return;
-        document.getElementById('auth-btn').style.display = 'none';
-        document.getElementById('user-info').style.display = 'flex';
-        try {
-            const channelRes = await gapi.client.youtube.channels.list({ part: 'snippet', mine: true });
-            if (channelRes.result.items.length) {
-                const user = channelRes.result.items[0].snippet;
-                document.getElementById('user-avatar').src = user.thumbnails.default.url;
-                document.getElementById('user-name').innerText = user.title;
-            }
-            setCategory('home');
-        } catch(e) { console.error("Profile Fetch Error", e); }
+    async function fetchPlaylists() {
+        const res = await gapi.client.youtube.playlists.list({ part: 'snippet,contentDetails', mine: true, maxResults: 50 });
+        fullList = res.result.items;
+        renderList(fullList);
     }
 
-    function setupVirtualScroll() {
-        const viewport = document.getElementById('viewport');
-        viewport.addEventListener('scroll', () => {
-            renderVirtualItems();
-            const scrollBottom = viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight;
-            if (scrollBottom < 300 && !isFetching && nextPageToken) {
-                if (currentSearchQuery) performSearch(currentSearchQuery, true);
-                else if (['home', 'playlists', 'music'].includes(currentCategory)) fetchPersonalizedData(true);
-            }
-        });
-    }
-
-    function renderVirtualItems() {
-        const viewport = document.getElementById('viewport');
-        const visibleContainer = document.getElementById('visible-items');
-        const scrollContent = document.getElementById('scroll-content');
-        scrollContent.style.height = `${activeList.length * ITEM_HEIGHT}px`;
-
-        const scrollTop = viewport.scrollTop;
-        const viewportHeight = viewport.clientHeight;
-        const startIndex = Math.max(0, Math.floor(scrollTop / ITEM_HEIGHT) - BUFFER_COUNT);
-        const endIndex = Math.min(activeList.length - 1, Math.ceil((scrollTop + viewportHeight) / ITEM_HEIGHT) + BUFFER_COUNT);
-
-        visibleContainer.innerHTML = '';
-        for (let i = startIndex; i <= endIndex; i++) {
-            const item = activeList[i];
+    function renderList(items) {
+        const container = document.getElementById('viewport');
+        container.innerHTML = '';
+        items.forEach(item => {
             const vid = item.id?.videoId || item.snippet?.resourceId?.videoId || item.id;
-            if (!vid || typeof vid !== 'string') continue;
-
             const isFav = favorites.some(f => (f.id?.videoId || f.snippet?.resourceId?.videoId || f.id) === vid);
-            const stats = item.extraStats || { duration: '--:--', likes: '0', views: '0' };
-
+            
             const card = document.createElement('div');
             card.className = 'item-card';
-            card.style.transform = `translateY(${i * ITEM_HEIGHT}px)`;
             card.onclick = () => playItem(vid, item);
-            
             card.innerHTML = `
                 <div class="thumb-container">
-                    <img src="${item.snippet.thumbnails?.medium?.url || item.snippet.thumbnails?.default?.url}">
-                    <div class="duration-badge">${stats.duration}</div>
+                    <img src="${item.snippet.thumbnails?.default?.url}">
                 </div>
                 <div class="item-details">
-                    <div class="item-title" title="${item.snippet.title}">${item.snippet.title}</div>
+                    <div class="item-title">${item.snippet.title}</div>
                     <div class="item-channel">${item.snippet.channelTitle || 'YouTube'}</div>
-                    <div class="item-stats">
-                        <div class="stat-item">👍 ${formatCount(stats.likes)}</div>
-                        <div class="stat-item">👁️ ${formatCount(stats.views)}</div>
-                    </div>
                 </div>
                 <button class="fav-btn ${isFav ? 'active' : ''}" onclick="event.stopPropagation(); toggleFav('${vid}', ${JSON.stringify(item).replace(/"/g, '&quot;')})">
                     ${isFav ? '❤️' : '🤍'}
                 </button>
             `;
-            visibleContainer.appendChild(card);
-        }
-    }
-
-    async function fetchPersonalizedData(append = false) {
-        if (isFetching || !gapi.client.getToken()) return;
-        isFetching = true;
-        try {
-            let res;
-            if (currentCategory === 'home') {
-                // Home logic: Try activities first (subscriptions/recommendations)
-                res = await gapi.client.youtube.activities.list({
-                    part: 'snippet,contentDetails',
-                    mine: true,
-                    maxResults: 25,
-                    pageToken: nextPageToken
-                });
-                let items = res.result.items.filter(it => it.contentDetails.upload || it.contentDetails.recommendation);
-                
-                // Fallback: If your personal feed is empty or very short, pull trending/popular videos
-                if (items.length < 5 && !nextPageToken) {
-                    const fallbackRes = await gapi.client.youtube.videos.list({
-                        part: 'snippet,contentDetails,statistics',
-                        chart: 'mostPopular',
-                        maxResults: 20
-                    });
-                    items = items.concat(fallbackRes.result.items);
-                } else {
-                    await enrichWithStats(items, append, 'activity');
-                    nextPageToken = res.result.nextPageToken || '';
-                    isFetching = false;
-                    renderVirtualItems();
-                    return; // enriched method handles the list update
-                }
-                
-                if (append) activeList = activeList.concat(items);
-                else activeList = items;
-                nextPageToken = res.result.nextPageToken || '';
-
-            } else if (currentCategory === 'music') {
-                res = await gapi.client.youtube.search.list({
-                    part: 'snippet',
-                    type: 'video',
-                    videoCategoryId: '10',
-                    maxResults: 25,
-                    pageToken: nextPageToken,
-                    q: '' 
-                });
-                await enrichWithStats(res.result.items, append, 'search');
-                nextPageToken = res.result.nextPageToken || '';
-                isFetching = false;
-                renderVirtualItems();
-                return;
-            } else if (currentCategory === 'playlists') {
-                res = await gapi.client.youtube.playlists.list({
-                    part: 'snippet,contentDetails',
-                    mine: true,
-                    maxResults: 25,
-                    pageToken: nextPageToken
-                });
-                const items = res.result.items;
-                if (append) activeList = activeList.concat(items);
-                else activeList = items;
-                nextPageToken = res.result.nextPageToken || '';
-            }
-            renderVirtualItems();
-        } catch (e) { console.error("Fetch Error", e); }
-        finally { isFetching = false; }
-    }
-
-    async function enrichWithStats(items, append, type) {
-        const videoIds = items.map(it => {
-            if (type === 'activity') return it.contentDetails.upload?.videoId || it.contentDetails.recommendation?.resourceId?.videoId;
-            return it.id.videoId || it.id;
-        }).filter(id => !!id).join(',');
-
-        if (videoIds) {
-            const statsRes = await gapi.client.youtube.videos.list({ part: 'contentDetails,statistics', id: videoIds });
-            const statsMap = {};
-            statsRes.result.items.forEach(v => {
-                statsMap[v.id] = {
-                    duration: formatDuration(v.contentDetails.duration),
-                    likes: v.statistics.likeCount,
-                    views: v.statistics.viewCount
-                };
-            });
-            items.forEach(it => {
-                const vid = type === 'activity' ? (it.contentDetails.upload?.videoId || it.contentDetails.recommendation?.resourceId?.videoId) : (it.id.videoId || it.id);
-                it.extraStats = statsMap[vid];
-            });
-        }
-        if (append) activeList = activeList.concat(items);
-        else activeList = items;
-    }
-
-    async function performSearch(query, append = false) {
-        if (isFetching || !query) return;
-        isFetching = true;
-        try {
-            const params = {
-                q: query, 
-                part: 'snippet', 
-                type: 'video', 
-                maxResults: 25, 
-                pageToken: nextPageToken
-            };
-            if (currentCategory === 'music') params.videoCategoryId = '10';
-
-            const res = await gapi.client.youtube.search.list(params);
-            let items = res.result.items;
-            nextPageToken = res.result.nextPageToken || '';
-            
-            const ids = items.map(it => it.id.videoId).join(',');
-            if (ids) {
-                const statsRes = await gapi.client.youtube.videos.list({ part: 'contentDetails,statistics', id: ids });
-                const statsMap = {};
-                statsRes.result.items.forEach(v => statsMap[v.id] = {
-                    duration: formatDuration(v.contentDetails.duration),
-                    likes: v.statistics.likeCount,
-                    views: v.statistics.viewCount
-                });
-                items.forEach(it => it.extraStats = statsMap[it.id.videoId]);
-            }
-
-            if (append) activeList = activeList.concat(items);
-            else activeList = items;
-            renderVirtualItems();
-        } catch (e) { console.error(e); }
-        finally { isFetching = false; }
+            container.appendChild(card);
+        });
     }
 
     function setCategory(cat) {
         currentCategory = cat;
-        nextPageToken = '';
-        currentSearchQuery = ''; 
-        document.getElementById('search-input').value = '';
-        activeList = [];
-        
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
         document.getElementById(`tab-${cat}`).classList.add('active');
         
-        if (cat === 'favs') { activeList = [...favorites]; renderVirtualItems(); }
-        else if (cat === 'history') { activeList = [...historyList]; renderVirtualItems(); }
-        else if (gapi.client.getToken()) fetchPersonalizedData();
-        
-        document.getElementById('viewport').scrollTop = 0;
+        if (cat === 'playlists') fetchPlaylists();
+        else if (cat === 'history') { fullList = [...historyList]; renderList(fullList); }
+        else if (cat === 'favs') { fullList = [...favorites]; renderList(fullList); }
     }
 
-    function handleAuthClick() { tokenClient.requestAccessToken({prompt: gapi.client.getToken() ? '' : 'consent'}); }
-    
-    function handleSearch(e) { 
-        if (e.key === 'Enter') { 
-            currentSearchQuery = e.target.value; 
-            nextPageToken = ''; 
-            activeList = []; 
-            performSearch(currentSearchQuery); 
-        } 
-    }
-
-    function formatDuration(duration) {
-        if (!duration) return "0:00";
-        const match = duration.match(/PT(\d+H)?(\d+M)?(\d+S)?/);
-        const hours = (parseInt(match[1]) || 0);
-        const minutes = (parseInt(match[2]) || 0);
-        const seconds = (parseInt(match[3]) || 0);
-        let result = "";
-        if (hours > 0) result += hours + ":";
-        result += (hours > 0 && minutes < 10 ? "0" + minutes : minutes) + ":";
-        result += (seconds < 10 ? "0" + seconds : seconds);
-        return result;
-    }
-
-    function formatCount(num) {
-        if (!num) return "0";
-        const n = parseInt(num);
-        if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
-        if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
-        return n.toString();
+    function playItem(id, item) {
+        if (player?.loadVideoById) {
+            player.loadVideoById(id);
+            // Update History logic: Remove duplicate if exists and unshift to top
+            const idx = historyList.findIndex(h => (h.id?.videoId || h.snippet?.resourceId?.videoId || h.id) === id);
+            if (idx > -1) historyList.splice(idx, 1);
+            historyList.unshift(item);
+            if (historyList.length > 100) historyList.pop();
+            localStorage.setItem('yt_history', JSON.stringify(historyList));
+            if (currentCategory === 'history') renderList(historyList);
+        }
     }
 
     function toggleFav(id, item) {
@@ -623,44 +305,30 @@
         if (idx > -1) favorites.splice(idx, 1);
         else favorites.unshift(item);
         localStorage.setItem('yt_favorites', JSON.stringify(favorites));
-        if (currentCategory === 'favs') activeList = [...favorites];
-        renderVirtualItems();
+        if (currentCategory === 'favs') renderList(favorites);
+        else renderList(fullList);
     }
 
-    function playItem(id, item) { 
-        if (player?.loadVideoById) {
-            player.loadVideoById(id);
-            const exists = historyList.findIndex(h => (h.id?.videoId || h.snippet?.resourceId?.videoId || h.id) === id);
-            if (exists > -1) historyList.splice(exists, 1);
-            historyList.unshift(item);
-            if (historyList.length > 200) historyList.pop();
-            localStorage.setItem('yt_history', JSON.stringify(historyList));
-            if (currentCategory === 'history') {
-                activeList = [...historyList];
-                renderVirtualItems();
-            }
-        }
+    function filterItems() {
+        const q = document.getElementById('search-input').value.toLowerCase();
+        const listToFilter = currentCategory === 'playlists' ? fullList : (currentCategory === 'history' ? historyList : favorites);
+        const filtered = listToFilter.filter(i => i.snippet.title.toLowerCase().includes(q));
+        renderList(filtered);
     }
 
-    function shuffleCurrentList() { if (activeList.length < 2) return; activeList.sort(() => Math.random() - 0.5); renderVirtualItems(); }
-    
-    function showSettings() { 
-        document.getElementById('input-client-id').value = CLIENT_ID;
-        document.getElementById('input-api-key').value = API_KEY;
-        document.getElementById('modal-settings').style.display = 'flex'; 
-    }
-    
+    function handleAuthClick() { tokenClient.requestAccessToken(); }
+
     function saveSettings() {
         localStorage.setItem('yt_client_id', document.getElementById('input-client-id').value.trim());
         localStorage.setItem('yt_api_key', document.getElementById('input-api-key').value.trim());
         location.reload();
     }
 
-    var tag = document.createElement('script'); tag.src = "https://www.youtube.com/iframe_api";
-    document.getElementsByTagName('script')[0].parentNode.insertBefore(tag, null);
     function onYouTubeIframeAPIReady() {
-        player = new YT.Player('player', { height: '100%', width: '100%', playerVars: { 'autoplay': 1, 'origin': window.location.origin } });
+        player = new YT.Player('player', { height: '100%', width: '100%', playerVars: { 'autoplay': 1 } });
     }
+    const tag = document.createElement('script'); tag.src = "https://www.youtube.com/iframe_api";
+    document.getElementsByTagName('script')[0].parentNode.insertBefore(tag, null);
 </script>
 </body>
 </html>
