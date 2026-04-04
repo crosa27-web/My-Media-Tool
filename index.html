@@ -8,408 +8,521 @@
     <script src="https://apis.google.com/js/api.js"></script>
     <style>
         :root {
-            --bg-color: #f4f4f9;
+            --bg-color: #f0f2f5;
             --sidebar-color: #ffffff;
             --accent-color: #ff0000;
-            --text-color: #333;
-            --item-hover: #f0f0f0;
-            --card-bg: #fff;
+            --text-color: #1c1e21;
+            --secondary-text: #606770;
+            --item-hover: #f2f3f5;
+            --card-bg: #ffffff;
+            --player-bg: #000000;
         }
 
-        /* Music Mode Theme Variables */
         .music-mode {
-            --bg-color: #0f0f0f;
-            --sidebar-color: #1a1a1a;
-            --accent-color: #1db954; /* Spotify-esque green */
-            --text-color: #ececec;
-            --item-hover: #2a2a2a;
-            --card-bg: #222;
+            --bg-color: #0a0a0a;
+            --sidebar-color: #121212;
+            --accent-color: #1db954;
+            --text-color: #ffffff;
+            --secondary-text: #b3b3b3;
+            --item-hover: #282828;
+            --card-bg: #181818;
+            --player-bg: #000000;
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             margin: 0;
             background-color: var(--bg-color);
             color: var(--text-color);
             display: flex;
             height: 100vh;
             overflow: hidden;
-            transition: all 0.3s ease;
+            transition: background 0.3s ease;
         }
 
-        /* Sidebar */
         #sidebar {
-            width: 300px;
+            width: 400px;
             background-color: var(--sidebar-color);
-            border-right: 1px solid #ddd;
             display: flex;
             flex-direction: column;
-            transition: all 0.3s ease;
+            border-right: 1px solid rgba(0,0,0,0.1);
+            z-index: 10;
         }
 
-        .header-box {
-            padding: 20px;
-            border-bottom: 1px solid #ddd;
-            text-align: center;
+        .header {
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+        }
+
+        .top-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         #auth-btn {
             background-color: var(--accent-color);
             color: white;
             border: none;
-            padding: 10px 20px;
-            border-radius: 20px;
+            padding: 10px 15px;
+            border-radius: 8px;
             cursor: pointer;
-            font-weight: bold;
+            font-weight: 600;
+            font-size: 13px;
         }
 
-        /* Search Area */
-        .search-container {
-            padding: 15px;
+        .settings-link {
+            font-size: 18px;
+            cursor: pointer;
+            opacity: 0.6;
+        }
+
+        .tabs {
             display: flex;
+            background: rgba(0,0,0,0.05);
+            padding: 4px;
+            border-radius: 8px;
+            gap: 2px;
+            flex-wrap: wrap;
+        }
+
+        .music-mode .tabs { background: #282828; }
+
+        .tab {
+            flex: 1 1 45%;
+            text-align: center;
+            padding: 6px;
+            cursor: pointer;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            transition: 0.2s;
+            text-transform: uppercase;
+        }
+
+        .tab.active { background: var(--accent-color); color: white; }
+
+        .search-box { padding: 15px; }
+
+        #search-input {
+            width: 100%;
+            padding: 12px 16px;
+            border-radius: 20px;
+            border: 1px solid rgba(0,0,0,0.1);
+            background: var(--bg-color);
+            color: var(--text-color);
+            box-sizing: border-box;
+            outline: none;
+        }
+
+        #content-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
             gap: 10px;
         }
 
-        #search-input {
-            flex-grow: 1;
-            padding: 8px 12px;
-            border-radius: 20px;
-            border: 1px solid #ccc;
-            outline: none;
-            background: var(--bg-color);
-            color: var(--text-color);
-        }
-
-        /* Categories */
-        .category-tabs {
+        .list-controls {
+            padding: 0 15px 10px;
             display: flex;
-            justify-content: space-around;
-            padding: 10px;
-            background: var(--item-hover);
+            justify-content: flex-end;
         }
 
-        .tab {
+        .clear-btn {
+            font-size: 12px;
+            color: var(--secondary-text);
+            background: none;
+            border: 1px solid var(--secondary-text);
+            padding: 4px 10px;
+            border-radius: 12px;
             cursor: pointer;
-            padding: 5px 15px;
-            border-radius: 15px;
-            font-size: 0.9em;
-        }
-
-        .tab.active {
-            background-color: var(--accent-color);
-            color: white;
-        }
-
-        /* Content List */
-        #content-list {
-            flex-grow: 1;
-            overflow-y: auto;
-            padding: 10px;
         }
 
         .item-card {
             display: flex;
-            align-items: center;
+            gap: 12px;
             padding: 10px;
-            margin-bottom: 8px;
             background: var(--card-bg);
-            border-radius: 8px;
+            border-radius: 10px;
             cursor: pointer;
-            transition: background 0.2s;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            position: relative;
+            align-items: center;
         }
 
-        .item-card:hover {
-            background: var(--item-hover);
-        }
+        .item-card:hover { background: var(--item-hover); }
 
         .item-card img {
-            width: 80px;
-            height: 45px;
+            width: 100px;
+            height: 56px;
+            border-radius: 6px;
             object-fit: cover;
-            border-radius: 4px;
-            margin-right: 12px;
+            flex-shrink: 0;
         }
 
-        .item-info {
-            font-size: 0.85em;
-            font-weight: 500;
+        .item-details { flex-grow: 1; overflow: hidden; padding-right: 25px; }
+
+        .item-title {
+            font-size: 13px;
+            font-weight: 600;
+            line-height: 1.2;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
             overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
         }
 
-        /* Main Content */
-        #main {
-            flex-grow: 1;
-            display: flex;
+        .fav-btn {
+            position: absolute;
+            right: 8px;
+            font-size: 18px;
+            color: #ccc;
+            cursor: pointer;
+        }
+
+        .fav-btn.active { color: #ff4757; }
+
+        #display-area { flex: 1; position: relative; background: #000; }
+
+        #album-view {
+            display: none;
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg-color);
+            z-index: 5;
             flex-direction: column;
-            background-color: var(--bg-color);
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 20px;
         }
 
-        #player-container {
+        .music-mode #album-view { display: flex; }
+
+        .album-art {
+            width: 300px; height: 300px;
+            max-width: 60vw; max-height: 60vw;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            margin-bottom: 20px;
+            object-fit: cover;
+        }
+
+        .music-mode #video-container { position: absolute; width: 1px; height: 1px; opacity: 0; }
+
+        /* Universal Modal Style */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: var(--sidebar-color);
+            color: var(--text-color);
+            padding: 25px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 350px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        }
+
+        .modal-content h3 { margin-top: 0; }
+
+        .modal-content input {
             width: 100%;
-            aspect-ratio: 16 / 9;
-            background: #000;
-        }
-
-        #system-console {
-            height: 150px;
-            background: #222;
-            color: #0f0;
-            font-family: monospace;
             padding: 10px;
-            font-size: 12px;
-            overflow-y: auto;
-            border-top: 2px solid var(--accent-color);
+            margin: 10px 0;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
         }
 
-        .log-entry { margin-bottom: 4px; }
-        .log-err { color: #f55; }
-        .log-success { color: #5f5; }
+        .modal-btns {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
 
-        @media (max-width: 768px) {
+        .btn-p { flex: 1; padding: 10px; background: var(--accent-color); color: white; border: none; border-radius: 6px; cursor: pointer; }
+        .btn-s { flex: 1; padding: 10px; background: #ccc; color: #333; border: none; border-radius: 6px; cursor: pointer; }
+
+        @media (max-width: 900px) {
             body { flex-direction: column; }
-            #sidebar { width: 100%; height: 40%; border-right: none; border-top: 1px solid #ddd; }
-            #player-container { height: auto; }
+            #sidebar { width: 100%; height: 60%; }
+            #display-area { flex-grow: 1; }
         }
     </style>
 </head>
 <body>
 
-    <div id="sidebar">
-        <div class="header-box">
-            <h3 style="margin:0 0 10px 0;">Media Manager</h3>
-            <button id="auth-btn" onclick="handleAuthClick()">Connect YouTube</button>
+<div id="sidebar">
+    <div class="header">
+        <div class="top-row">
+            <button id="auth-btn" onclick="handleAuthClick()">Connect Account</button>
+            <span class="settings-link" onclick="showSettings()">⚙️</span>
         </div>
-
-        <div class="category-tabs">
+        <div class="tabs">
             <div id="tab-video" class="tab active" onclick="setCategory('video')">Video</div>
             <div id="tab-music" class="tab" onclick="setCategory('music')">Music</div>
-        </div>
-
-        <div class="search-container">
-            <input type="text" id="search-input" placeholder="Search YouTube..." onkeypress="handleSearch(event)">
-        </div>
-
-        <div id="content-list">
-            <!-- Playlists or Search Results will appear here -->
-            <div style="padding:20px; text-align:center; opacity:0.6;">Connect to load content</div>
+            <div id="tab-favs" class="tab" onclick="setCategory('favs')">Favs</div>
+            <div id="tab-history" class="tab" onclick="setCategory('history')">History</div>
         </div>
     </div>
+    <div class="search-box">
+        <input type="text" id="search-input" placeholder="Search..." onkeypress="handleSearch(event)">
+    </div>
+    <div id="list-controls-container" class="list-controls" style="display:none;">
+        <button class="clear-btn" onclick="showModal('clear-history')">Clear History</button>
+    </div>
+    <div id="content-list"></div>
+</div>
 
-    <div id="main">
-        <div id="player-container">
-            <div id="player"></div>
-        </div>
-        <div id="system-console">
-            <div class="log-entry">System ready...</div>
+<div id="display-area">
+    <div id="video-container" style="width:100%; height:100%;">
+        <div id="player"></div>
+    </div>
+    <div id="album-view">
+        <img id="current-album-art" class="album-art" src="" alt="">
+        <h2 id="current-title">Ready</h2>
+        <p id="current-artist" style="color:var(--secondary-text)">YouTube Media Manager</p>
+    </div>
+</div>
+
+<!-- Modals -->
+<div id="modal-settings" class="modal-overlay">
+    <div class="modal-content">
+        <h3>App Credentials</h3>
+        <p style="font-size: 11px; opacity: 0.7;">Stored locally in your browser.</p>
+        <input type="text" id="input-client-id" placeholder="Client ID">
+        <input type="password" id="input-api-key" placeholder="API Key">
+        <div class="modal-btns">
+            <button class="btn-s" onclick="closeModals()">Cancel</button>
+            <button class="btn-p" onclick="saveSettings()">Save & Reload</button>
         </div>
     </div>
+</div>
 
-    <script>
-        // REPLACE THESE WITH YOUR WORKING CREDENTIALS
-        const CLIENT_ID = '548832992786-1lb8pc13nrubj10if74sfnc6nipob1um.apps.googleusercontent.com';
-        const API_KEY = 'AIzaSyBMelqr_i2dzuGqSab8D4_PGtw5-WctgsM';
-        
-        const DISCOVERY_DOC = "https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest";
-        const SCOPES = "https://www.googleapis.com/auth/youtube.readonly";
+<div id="modal-clear" class="modal-overlay">
+    <div class="modal-content">
+        <h3>Clear History?</h3>
+        <p>This will permanently remove your recent play list.</p>
+        <div class="modal-btns">
+            <button class="btn-s" onclick="closeModals()">Cancel</button>
+            <button class="btn-p" onclick="confirmClearHistory()">Confirm Clear</button>
+        </div>
+    </div>
+</div>
 
-        let tokenClient;
-        let gapiInited = false;
-        let gisInited = false;
-        let player;
-        let currentCategory = 'video'; // 'video' or 'music'
+<script>
+    let CLIENT_ID = localStorage.getItem('yt_client_id') || '';
+    let API_KEY = localStorage.getItem('yt_api_key') || '';
 
-        function log(msg, type = '') {
-            const consoleEl = document.getElementById('system-console');
-            const entry = document.createElement('div');
-            entry.className = `log-entry ${type ? 'log-' + type : ''}`;
-            entry.innerText = `[${new Date().toLocaleTimeString()}] ${msg}`;
-            consoleEl.appendChild(entry);
-            consoleEl.scrollTop = consoleEl.scrollHeight;
+    const DISCOVERY_DOC = "https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest";
+    const SCOPES = "https://www.googleapis.com/auth/youtube.readonly";
+
+    let tokenClient;
+    let player;
+    let currentCategory = 'video';
+    let activeList = [];
+    let currentIndex = -1;
+    
+    let favorites = JSON.parse(localStorage.getItem('yt_favorites') || '[]');
+    let historyList = JSON.parse(localStorage.getItem('yt_history') || '[]');
+
+    window.onload = function() {
+        if (!CLIENT_ID || !API_KEY) {
+            showSettings();
+        } else {
+            initGapi();
         }
+    };
 
-        // Initialize Google APIs
-        window.onload = function() {
-            gapi.load('client', initializeGapiClient);
-            tokenClient = google.accounts.oauth2.initTokenClient({
-                client_id: CLIENT_ID,
-                scope: SCOPES,
-                callback: '', // defined later
-            });
-            gisInited = true;
-            log("Google Identity Services Loaded");
+    function initGapi() {
+        gapi.load('client', async () => {
+            try {
+                await gapi.client.init({ apiKey: API_KEY, discoveryDocs: [DISCOVERY_DOC] });
+                tokenClient = google.accounts.oauth2.initTokenClient({
+                    client_id: CLIENT_ID,
+                    scope: SCOPES,
+                    callback: ''
+                });
+            } catch(e) {
+                console.error("GAPI Init Fail. Check keys.");
+                showSettings();
+            }
+        });
+    }
+
+    function showSettings() {
+        document.getElementById('input-client-id').value = CLIENT_ID;
+        document.getElementById('input-api-key').value = API_KEY;
+        document.getElementById('modal-settings').style.display = 'flex';
+    }
+
+    function saveSettings() {
+        const cid = document.getElementById('input-client-id').value;
+        const key = document.getElementById('input-api-key').value;
+        localStorage.setItem('yt_client_id', cid);
+        localStorage.setItem('yt_api_key', key);
+        location.reload();
+    }
+
+    function closeModals() {
+        document.querySelectorAll('.modal-overlay').forEach(m => m.style.display = 'none');
+    }
+
+    function showModal(type) {
+        if (type === 'clear-history') document.getElementById('modal-clear').style.display = 'flex';
+    }
+
+    function handleAuthClick() {
+        if (!tokenClient) { showSettings(); return; }
+        tokenClient.callback = async (resp) => {
+            if (resp.error) return;
+            document.getElementById('auth-btn').innerText = "Connected";
+            loadInitial();
         };
+        tokenClient.requestAccessToken({prompt: gapi.client.getToken() ? '' : 'consent'});
+    }
 
-        async function initializeGapiClient() {
-            try {
-                await gapi.client.init({
-                    apiKey: API_KEY,
-                    discoveryDocs: [DISCOVERY_DOC],
-                });
-                gapiInited = true;
-                log("YouTube API Client Initialized", "success");
-            } catch (err) {
-                log("API Init Error: " + JSON.stringify(err), "err");
-            }
+    function setCategory(cat) {
+        currentCategory = cat;
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.getElementById(`tab-${cat}`).classList.add('active');
+        document.body.className = cat === 'music' ? 'music-mode' : '';
+        document.getElementById('list-controls-container').style.display = (cat === 'history' && historyList.length > 0) ? 'flex' : 'none';
+
+        if (cat === 'favs') renderList(favorites, 'video');
+        else if (cat === 'history') renderList(historyList, 'video');
+        else {
+            const q = document.getElementById('search-input').value;
+            if (q) performSearch(q); else loadInitial();
         }
+    }
 
-        function handleAuthClick() {
-            tokenClient.callback = async (resp) => {
-                if (resp.error !== undefined) throw (resp);
-                log("Authentication Successful", "success");
-                document.getElementById('auth-btn').innerText = "Account Connected";
-                loadUserPlaylists();
+    async function loadInitial() {
+        if (currentCategory === 'favs' || currentCategory === 'history') return;
+        try {
+            const res = await gapi.client.youtube.playlists.list({ mine: true, part: 'snippet', maxResults: 20 });
+            renderList(res.result.items, 'playlist');
+        } catch (e) { console.error(e); }
+    }
+
+    function handleSearch(e) { if (e.key === 'Enter') performSearch(e.target.value); }
+
+    async function performSearch(query) {
+        if (currentCategory === 'favs' || currentCategory === 'history') return;
+        let params = { q: query, part: 'snippet', type: 'video', maxResults: 30 };
+        if (currentCategory === 'music') params.videoCategoryId = '10';
+        try {
+            const res = await gapi.client.youtube.search.list(params);
+            activeList = res.result.items;
+            renderList(activeList, 'video');
+        } catch (e) { console.error(e); }
+    }
+
+    function toggleFavorite(e, item) {
+        e.stopPropagation();
+        const id = item.id.videoId || item.id;
+        const index = favorites.findIndex(f => (f.id.videoId || f.id || f.contentDetails?.videoId) === id);
+        if (index > -1) favorites.splice(index, 1);
+        else favorites.push(item);
+        localStorage.setItem('yt_favorites', JSON.stringify(favorites));
+        if (currentCategory === 'favs') renderList(favorites, 'video');
+        else e.target.classList.toggle('active', index === -1);
+    }
+
+    function addToHistory(item) {
+        const id = item.id.videoId || item.id || item.contentDetails?.videoId;
+        historyList = historyList.filter(f => (f.id.videoId || f.id || f.contentDetails?.videoId) !== id);
+        historyList.unshift(item);
+        if (historyList.length > 50) historyList.pop();
+        localStorage.setItem('yt_history', JSON.stringify(historyList));
+    }
+
+    function confirmClearHistory() {
+        historyList = [];
+        localStorage.setItem('yt_history', JSON.stringify(historyList));
+        renderList([], 'video');
+        closeModals();
+    }
+
+    function renderList(items, type) {
+        const container = document.getElementById('content-list');
+        container.innerHTML = '';
+        items.forEach((item, index) => {
+            const card = document.createElement('div');
+            card.className = 'item-card';
+            const s = item.snippet;
+            const videoId = item.id.videoId || (type === 'playlist' ? item.id : item.contentDetails?.videoId);
+            const isFav = favorites.some(f => (f.id.videoId || f.id || f.contentDetails?.videoId) === videoId);
+
+            card.onclick = () => {
+                if (type === 'playlist') loadPlaylist(item.id);
+                else {
+                    currentIndex = index; activeList = items;
+                    addToHistory(item); playItem(videoId, s);
+                }
             };
 
-            if (gapi.client.getToken() === null) {
-                tokenClient.requestAccessToken({prompt: 'consent'});
-            } else {
-                tokenClient.requestAccessToken({prompt: ''});
-            }
+            card.innerHTML = `
+                <img src="${s.thumbnails.medium.url}">
+                <div class="item-details">
+                    <div class="item-title">${s.title}</div>
+                    <div class="item-meta">${s.channelTitle}</div>
+                </div>
+                ${type !== 'playlist' ? `<div class="fav-btn ${isFav ? 'active' : ''}" onclick="toggleFavorite(event, ${JSON.stringify(item).replace(/"/g, '&quot;')})">❤</div>` : ''}
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    async function loadPlaylist(id) {
+        const res = await gapi.client.youtube.playlistItems.list({ playlistId: id, part: 'snippet,contentDetails', maxResults: 50 });
+        activeList = res.result.items;
+        renderList(activeList, 'video');
+    }
+
+    function playItem(id, s) {
+        if (player && player.loadVideoById) {
+            player.loadVideoById(id);
+            document.getElementById('current-album-art').src = s.thumbnails.high?.url || s.thumbnails.medium?.url;
+            document.getElementById('current-title').innerText = s.title;
+            document.getElementById('current-artist').innerText = s.channelTitle;
         }
+    }
 
-        function setCategory(cat) {
-            currentCategory = cat;
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            document.getElementById(`tab-${cat}`).classList.add('active');
-            
-            if (cat === 'music') {
-                document.body.classList.add('music-mode');
-                log("Switched to Music Mode (Music Filter Active)");
-            } else {
-                document.body.classList.remove('music-mode');
-                log("Switched to Video Mode");
-            }
-            // If search is active, re-search with new category filter
-            const query = document.getElementById('search-input').value;
-            if (query) performGlobalSearch(query);
+    function onPlayerStateChange(event) {
+        if (event.data === 0 && currentIndex < activeList.length - 1) {
+            currentIndex++;
+            const next = activeList[currentIndex];
+            const videoId = next.id.videoId || next.contentDetails?.videoId;
+            addToHistory(next);
+            playItem(videoId, next.snippet);
         }
+    }
 
-        async function loadUserPlaylists() {
-            try {
-                const response = await gapi.client.youtube.playlists.list({
-                    part: 'snippet,contentDetails',
-                    mine: true,
-                    maxResults: 25
-                });
-                displayItems(response.result.items, 'playlist');
-            } catch (err) {
-                log("Error loading playlists: " + err.message, "err");
-            }
-        }
+    var tag = document.createElement('script');
+    tag.src = "https://www.youtube.com/iframe_api";
+    var firstScriptTag = document.getElementsByTagName('script')[0];
+    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 
-        function displayItems(items, type) {
-            const list = document.getElementById('content-list');
-            list.innerHTML = '';
-
-            if (items.length === 0) {
-                list.innerHTML = '<div style="padding:20px; text-align:center;">No results found</div>';
-                return;
-            }
-
-            items.forEach(item => {
-                const title = item.snippet.title;
-                const thumb = item.snippet.thumbnails.default.url;
-                const id = type === 'playlist' ? item.id : item.id.videoId;
-
-                const card = document.createElement('div');
-                card.className = 'item-card';
-                card.onclick = () => {
-                    if (type === 'playlist') loadPlaylistVideos(id);
-                    else playVideo(id);
-                };
-
-                card.innerHTML = `
-                    <img src="${thumb}" alt="thumb">
-                    <div class="item-info">${title}</div>
-                `;
-                list.appendChild(card);
-            });
-        }
-
-        async function loadPlaylistVideos(playlistId) {
-            log(`Loading playlist: ${playlistId}`);
-            try {
-                const response = await gapi.client.youtube.playlistItems.list({
-                    part: 'snippet,contentDetails',
-                    playlistId: playlistId,
-                    maxResults: 50
-                });
-                
-                // Map playlist items to a similar structure as search results for display
-                const videos = response.result.items.map(v => ({
-                    id: { videoId: v.contentDetails.videoId },
-                    snippet: v.snippet
-                }));
-                displayItems(videos, 'video');
-            } catch (err) {
-                log("Error loading videos: " + err.message, "err");
-            }
-        }
-
-        function handleSearch(e) {
-            if (e.key === 'Enter') {
-                const query = e.target.value;
-                if (!query) {
-                    loadUserPlaylists();
-                    return;
-                }
-                performGlobalSearch(query);
-            }
-        }
-
-        async function performGlobalSearch(query) {
-            log(`Searching YouTube for: "${query}" in ${currentCategory} mode`);
-            
-            let searchParams = {
-                part: 'snippet',
-                q: query,
-                maxResults: 20,
-                type: 'video'
-            };
-
-            // Music Mode Filter: YouTube Video Category 10 is Music
-            if (currentCategory === 'music') {
-                searchParams.videoCategoryId = '10';
-            }
-
-            try {
-                const response = await gapi.client.youtube.search.list(searchParams);
-                displayItems(response.result.items, 'video');
-            } catch (err) {
-                log("Search Error: " + err.message, "err");
-                if (err.message.includes('403')) {
-                    log("Check if YouTube Data API is enabled in Google Console", "err");
-                }
-            }
-        }
-
-        // YouTube Player Integration
-        var tag = document.createElement('script');
-        tag.src = "https://www.youtube.com/iframe_api";
-        var firstScriptTag = document.getElementsByTagName('script')[0];
-        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-
-        function onYouTubeIframeAPIReady() {
-            player = new YT.Player('player', {
-                height: '100%',
-                width: '100%',
-                videoId: 'dQw4w9WgXcQ', // Placeholder
-                playerVars: {
-                    'playsinline': 1,
-                    'autoplay': 0
-                }
-            });
-        }
-
-        function playVideo(videoId) {
-            if (player && player.loadVideoById) {
-                player.loadVideoById(videoId);
-                log(`Playing Video ID: ${videoId}`, "success");
-            }
-        }
-    </script>
+    function onYouTubeIframeAPIReady() {
+        player = new YT.Player('player', {
+            height: '100%', width: '100%',
+            playerVars: { 'playsinline': 1, 'autoplay': 1 },
+            events: { 'onStateChange': onPlayerStateChange }
+        });
+    }
+</script>
 </body>
 </html>
