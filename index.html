@@ -81,6 +81,13 @@
             font-weight: 600;
             font-size: 11px;
             white-space: nowrap;
+            transition: opacity 0.2s;
+        }
+        
+        #auth-btn.connected {
+            background-color: #282828;
+            color: #1db954;
+            cursor: default;
         }
 
         .playback-controls-inline {
@@ -321,7 +328,7 @@
                 <button id="btn-shuffle" class="control-btn" onclick="toggleShuffle()" title="Shuffle">🔀</button>
                 <button class="control-btn" onclick="playPrev()" title="Previous">⏮️</button>
                 <button class="control-btn" onclick="playNext()" title="Next">⏭️</button>
-                <button id="btn-loop" class="control-btn" onclick="toggleLoop()" title="Loop">🔁</button>
+                <!-- Loop button removed per request -->
             </div>
 
             <button onclick="showSettings()" style="background:none; border:none; cursor:pointer; font-size:16px; filter: invert(1); padding:0;">⚙️</button>
@@ -369,7 +376,6 @@
     let currentList = [];
     let currentPlayingIndex = -1;
     let isShuffle = false;
-    let isLoop = false;
     let nextPageToken = null;
     let isFetching = false;
     let currentPlaylistId = null; 
@@ -386,11 +392,34 @@
             try {
                 await gapi.client.init({ apiKey: API_KEY, discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest"] });
                 tokenClient = google.accounts.oauth2.initTokenClient({
-                    client_id: CLIENT_ID, scope: "https://www.googleapis.com/auth/youtube.readonly", callback: ''
+                    client_id: CLIENT_ID, 
+                    scope: "https://www.googleapis.com/auth/youtube.readonly", 
+                    callback: (resp) => {
+                        if (resp.access_token) {
+                            updateAuthButton(true);
+                            setCategory('my-playlists');
+                        }
+                    }
                 });
+                // Check if already authenticated (simple check)
+                if (gapi.client.getToken()) updateAuthButton(true);
+                
                 performSearch('', false);
             } catch(e) { console.error("Init Error", e); }
         });
+    }
+
+    function updateAuthButton(connected) {
+        const btn = document.getElementById('auth-btn');
+        if (connected) {
+            btn.innerText = "Connected";
+            btn.classList.add('connected');
+            btn.onclick = null;
+        } else {
+            btn.innerText = "Connect YT";
+            btn.classList.remove('connected');
+            btn.onclick = handleAuthClick;
+        }
     }
 
     function setCategory(cat) {
@@ -465,6 +494,7 @@
     }
 
     function parseDuration(duration) {
+        if(!duration) return '';
         const match = duration.match(/PT(\d+H)?(\d+M)?(\d+S)?/);
         const hours = (parseInt(match[1]) || 0);
         const minutes = (parseInt(match[2]) || 0);
@@ -509,7 +539,6 @@
             const content = details.contentDetails || {};
             
             const views = stats.viewCount ? formatNum(stats.viewCount) : '';
-            const likes = stats.likeCount ? formatNum(stats.likeCount) : '';
             const duration = content.duration ? parseDuration(content.duration) : '';
 
             card.onclick = () => {
@@ -546,11 +575,6 @@
         document.getElementById('btn-shuffle').classList.toggle('active', isShuffle);
     }
 
-    function toggleLoop() {
-        isLoop = !isLoop;
-        document.getElementById('btn-loop').classList.toggle('active', isLoop);
-    }
-
     function playNext() {
         if (currentList.length === 0) return;
         let nextIndex;
@@ -559,25 +583,34 @@
         } else {
             nextIndex = currentPlayingIndex + 1;
             if (nextIndex >= currentList.length) {
-                nextIndex = isLoop ? 0 : currentList.length - 1;
+                nextIndex = 0; // Wrap to start
             }
         }
+        
         const item = currentList[nextIndex];
-        const vid = item.id.videoId || item.id || item.contentDetails?.videoId;
-        currentPlayingIndex = nextIndex;
-        playItem(vid);
+        // Handle various ID formats from search vs playlist results
+        const vid = item.id?.videoId || item.id || item.contentDetails?.videoId;
+        
+        if (vid) {
+            currentPlayingIndex = nextIndex;
+            playItem(vid);
+        }
     }
 
     function playPrev() {
         if (currentList.length === 0) return;
         let prevIndex = currentPlayingIndex - 1;
         if (prevIndex < 0) {
-            prevIndex = isLoop ? currentList.length - 1 : 0;
+            prevIndex = currentList.length - 1;
         }
+        
         const item = currentList[prevIndex];
-        const vid = item.id.videoId || item.id || item.contentDetails?.videoId;
-        currentPlayingIndex = prevIndex;
-        playItem(vid);
+        const vid = item.id?.videoId || item.id || item.contentDetails?.videoId;
+        
+        if (vid) {
+            currentPlayingIndex = prevIndex;
+            playItem(vid);
+        }
     }
 
     function clearHistory() {
@@ -594,11 +627,22 @@
     }
 
     function handleSearch(e) { if (e.key === 'Enter') performSearch(e.target.value, false); }
-    function playItem(id) { if (player?.loadVideoById) player.loadVideoById(id); }
+    
+    function playItem(id) { 
+        if (player && player.loadVideoById) {
+            player.loadVideoById(id);
+        }
+    }
+
     function addToHistory(item) {
-        historyList = [item, ...historyList.filter(i => (i.id.videoId || i.id || i.contentDetails?.videoId) !== (item.id.videoId || item.id || item.contentDetails?.videoId))].slice(0, 50);
+        const vid = item.id?.videoId || item.id || item.contentDetails?.videoId;
+        historyList = [item, ...historyList.filter(i => {
+            const currentId = i.id?.videoId || i.id || i.contentDetails?.videoId;
+            return currentId !== vid;
+        })].slice(0, 50);
         localStorage.setItem('yt_history', JSON.stringify(historyList));
     }
+
     function showSettings() { document.getElementById('modal-settings').style.display = 'flex'; }
     function hideSettings() { document.getElementById('modal-settings').style.display = 'none'; }
     function saveSettings() {
@@ -606,18 +650,21 @@
         localStorage.setItem('yt_api_key', document.getElementById('input-api-key').value);
         location.reload();
     }
+
     function handleAuthClick() {
-        tokenClient.callback = (resp) => { if (!resp.error) setCategory('my-playlists'); };
         tokenClient.requestAccessToken({prompt: 'consent'});
     }
+
     function handleSidebarScroll() {
         const btn = document.getElementById('jump-to-top');
         btn.style.display = document.getElementById('content-list').scrollTop > 300 ? 'flex' : 'none';
     }
+    
     function scrollToTop() { document.getElementById('content-list').scrollTo({top:0, behavior:'smooth'}); }
 
     var tag = document.createElement('script'); tag.src = "https://www.youtube.com/iframe_api";
     document.getElementsByTagName('script')[0].parentNode.insertBefore(tag, null);
+    
     function onYouTubeIframeAPIReady() {
         player = new YT.Player('player', { 
             height: '100%', 
