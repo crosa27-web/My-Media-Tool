@@ -75,8 +75,6 @@
             align-items: center;
         }
 
-        .btn-group { display: flex; gap: 8px; align-items: center; }
-
         #auth-btn {
             background-color: var(--accent-color);
             color: white;
@@ -86,16 +84,6 @@
             cursor: pointer;
             font-weight: 600;
             font-size: 12px;
-        }
-
-        .icon-btn {
-            font-size: 18px;
-            cursor: pointer;
-            opacity: 0.6;
-            background: none;
-            border: none;
-            color: var(--text-color);
-            padding: 5px;
         }
 
         .tabs-container {
@@ -128,10 +116,10 @@
 
         .tab.active { background: var(--accent-color); color: white; }
 
-        .action-bar { padding: 15px; flex-shrink: 0; display: flex; gap: 10px; }
+        .action-bar { padding: 15px; flex-shrink: 0; display: flex; gap: 10px; align-items: center; }
 
         #search-input {
-            width: 100%;
+            flex: 1;
             padding: 12px 16px;
             border-radius: 20px;
             border: 1px solid rgba(0,0,0,0.1);
@@ -140,16 +128,16 @@
             outline: none;
         }
 
-        .clear-btn {
-            background: rgba(255, 0, 0, 0.1);
-            color: #ff4444;
-            border: 1px solid rgba(255, 0, 0, 0.2);
-            padding: 8px 16px;
+        #clear-history-btn {
+            background: #eee;
+            border: none;
+            padding: 8px 15px;
             border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
+            font-size: 11px;
+            font-weight: bold;
             cursor: pointer;
             display: none;
+            color: #666;
         }
 
         #content-list {
@@ -160,7 +148,6 @@
             display: flex;
             flex-direction: column;
             gap: 8px;
-            scroll-behavior: smooth;
         }
 
         .item-card {
@@ -172,7 +159,6 @@
             cursor: pointer;
             align-items: center;
             position: relative;
-            flex-shrink: 0;
         }
         .item-card:hover { background: var(--item-hover); }
 
@@ -187,34 +173,17 @@
         .item-details { 
             flex-grow: 1; 
             overflow: hidden; 
-            padding-right: 35px;
             display: flex;
             flex-direction: column;
         }
 
-        .title-wrapper {
-            width: 100%;
-            overflow: hidden;
-            white-space: nowrap;
-            position: relative;
-        }
-
         .item-title { 
-            display: inline-block;
             font-size: 13px; 
             font-weight: 600; 
             line-height: 1.2;
-        }
-
-        .item-card:hover .item-title, 
-        .item-card:active .item-title {
-            animation: scroll-text 5s linear infinite;
-            padding-right: 50px;
-        }
-
-        @keyframes scroll-text {
-            0% { transform: translateX(0); }
-            100% { transform: translateX(-50%); }
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .item-meta { 
@@ -245,83 +214,28 @@
             flex-shrink: 0;
         }
 
-        .heart-btn {
-            position: absolute;
-            right: 12px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-size: 18px;
-            color: #ccc;
-            z-index: 5;
-        }
-        .heart-btn.is-fav { color: #ff4444; }
-
-        #video-container { width: 100%; height: 100%; }
-
-        #scroll-anchor {
-            height: 20px;
-            width: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 10px 0;
-            font-size: 12px;
-            color: var(--secondary-text);
-            flex-shrink: 0;
-        }
+        #video-container { width: 100%; height: 100%; background: #000; }
 
         #jump-to-top {
             position: absolute;
-            bottom: 80px; 
+            bottom: 20px; 
             right: 20px;
-            width: 48px;
-            height: 48px;
-            background-color: var(--accent-color);
+            width: 40px;
+            height: 40px;
+            background: var(--accent-color);
             color: white;
             border: none;
             border-radius: 50%;
-            cursor: pointer;
             display: none;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
-            z-index: 1000; 
-            font-size: 22px;
-            transition: transform 0.2s ease, opacity 0.2s ease, background-color 0.2s ease;
-        }
-
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8);
-            z-index: 2000;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .modal-content {
-            background: var(--sidebar-color);
-            color: var(--text-color);
-            padding: 25px;
-            border-radius: 12px;
-            width: 90%;
-            max-width: 350px;
+            z-index: 100;
         }
 
         @media (max-width: 900px) {
             body { flex-direction: column; }
-            #display-area { 
-                width: 100%; 
-                height: 35vh; 
-                flex: none;
-                order: -1; 
-            }
-            #sidebar { width: 100%; flex: 1; height: 65vh; }
-            #jump-to-top { bottom: 80px; } 
+            #display-area { width: 100%; height: 35vh; }
+            #sidebar { width: 100%; flex: 1; }
         }
     </style>
 </head>
@@ -337,10 +251,7 @@
     <div class="header">
         <div class="top-row">
             <button id="auth-btn" onclick="handleAuthClick()">Connect YT</button>
-            <div class="btn-group">
-                <button class="icon-btn" onclick="shuffleCurrentList()" title="Shuffle">🔀</button>
-                <button class="icon-btn" onclick="showSettings()" title="Settings">⚙️</button>
-            </div>
+            <button onclick="showSettings()" style="background:none; border:none; cursor:pointer; font-size:18px;">⚙️</button>
         </div>
         <div class="tabs-container">
             <div class="tabs">
@@ -354,23 +265,22 @@
     </div>
     <div class="action-bar">
         <input type="text" id="search-input" placeholder="Search music..." onkeypress="handleSearch(event)">
-        <button id="clear-history-btn" class="clear-btn" onclick="clearHistory()">Clear History</button>
+        <button id="clear-history-btn" onclick="clearHistory()">Clear All</button>
     </div>
     <div id="content-list" onscroll="handleSidebarScroll()"></div>
-    
-    <button id="jump-to-top" onclick="scrollToTop()" title="Jump to Top">
-        <span style="transform: translateY(-2px);">↑</span>
-    </button>
+    <button id="jump-to-top" onclick="scrollToTop()">↑</button>
 </div>
 
-<div id="modal-settings" class="modal-overlay">
-    <div class="modal-content">
-        <h3>API Settings</h3>
-        <input type="text" id="input-client-id" placeholder="Client ID" style="width:100%; margin-bottom:10px; padding:8px;">
-        <input type="password" id="input-api-key" placeholder="API Key" style="width:100%; margin-bottom:10px; padding:8px;">
-        <div style="display:flex; gap:10px;">
-            <button onclick="closeModals()" style="flex:1; padding:10px;">Cancel</button>
-            <button onclick="saveSettings()" style="flex:1; padding:10px; background:var(--accent-color); color:white; border:none;">Save</button>
+<div id="modal-settings" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:2000; align-items:center; justify-content:center;">
+    <div style="background:white; color:black; padding:20px; border-radius:10px; width:300px;">
+        <h3 style="margin-top:0;">Settings</h3>
+        <label style="font-size: 12px; color: #666;">Client ID</label>
+        <input type="text" id="input-client-id" placeholder="Client ID" style="width:100%; margin-bottom:10px; padding:8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px;">
+        <label style="font-size: 12px; color: #666;">API Key</label>
+        <input type="password" id="input-api-key" placeholder="API Key" style="width:100%; margin-bottom:20px; padding:8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px;">
+        <div style="display: flex; gap: 10px;">
+            <button onclick="saveSettings()" style="flex: 1; padding:10px; background:red; color:white; border:none; border-radius:5px; cursor: pointer; font-weight: bold;">Save</button>
+            <button onclick="hideSettings()" style="flex: 1; padding:10px; background:#ccc; color:black; border:none; border-radius:5px; cursor: pointer;">Cancel</button>
         </div>
     </div>
 </div>
@@ -379,29 +289,19 @@
     let CLIENT_ID = localStorage.getItem('yt_client_id') || '';
     let API_KEY = localStorage.getItem('yt_api_key') || '';
     let tokenClient, player, currentCategory = 'music';
-    let activeList = [];
     let historyList = JSON.parse(localStorage.getItem('yt_history') || '[]');
     let favorites = JSON.parse(localStorage.getItem('yt_favorites') || '[]');
-    
     let nextPageToken = null;
     let isFetching = false;
-    let currentPlaylistId = null;
-    let observer = null;
+    let currentPlaylistId = null; 
 
     window.onload = function() {
+        document.getElementById('input-client-id').value = CLIENT_ID;
+        document.getElementById('input-api-key').value = API_KEY;
+        
         if (!CLIENT_ID || !API_KEY) showSettings();
         else initGapi();
-        setupIntersectionObserver();
     };
-
-    function setupIntersectionObserver() {
-        const options = { root: document.getElementById('content-list'), threshold: 0.1 };
-        observer = new IntersectionObserver((entries) => {
-            if (entries[0].isIntersecting && !isFetching && nextPageToken) {
-                loadNextPage();
-            }
-        }, options);
-    }
 
     function initGapi() {
         gapi.load('client', async () => {
@@ -411,82 +311,63 @@
                     client_id: CLIENT_ID, scope: "https://www.googleapis.com/auth/youtube.readonly", callback: ''
                 });
                 performSearch('', false);
-            } catch(e) { console.error("GAPI Init Error", e); }
+            } catch(e) { console.error("Init Error", e); }
         });
-    }
-
-    function showSettings() { document.getElementById('modal-settings').style.display = 'flex'; }
-    function closeModals() { document.querySelectorAll('.modal-overlay').forEach(m => m.style.display = 'none'); }
-    
-    function saveSettings() {
-        localStorage.setItem('yt_client_id', document.getElementById('input-client-id').value);
-        localStorage.setItem('yt_api_key', document.getElementById('input-api-key').value);
-        location.reload();
-    }
-
-    function handleAuthClick() {
-        tokenClient.callback = async (resp) => { if (!resp.error) { document.getElementById('auth-btn').innerText = "Connected"; } };
-        tokenClient.requestAccessToken({prompt: gapi.client.getToken() ? '' : 'consent'});
-    }
-
-    function handleSidebarScroll() {
-        const list = document.getElementById('content-list');
-        const jumpBtn = document.getElementById('jump-to-top');
-        jumpBtn.style.display = list.scrollTop > 300 ? 'flex' : 'none';
-    }
-
-    function scrollToTop() {
-        document.getElementById('content-list').scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     function setCategory(cat) {
         currentCategory = cat;
         nextPageToken = null;
-        currentPlaylistId = null;
+        currentPlaylistId = null; 
+        
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
         document.getElementById(`tab-${cat}`).classList.add('active');
-        
-        const isMusic = (cat === 'music');
-        document.body.className = isMusic ? 'music-mode' : '';
+        document.body.className = (cat === 'music') ? 'music-mode' : '';
         
         const searchInput = document.getElementById('search-input');
         const clearBtn = document.getElementById('clear-history-btn');
 
+        // Toggle UI elements based on tab
         if (cat === 'music' || cat === 'video') {
             searchInput.style.display = 'block';
             clearBtn.style.display = 'none';
-            searchInput.placeholder = isMusic ? "Search music..." : "Search videos...";
-            performSearch(searchInput.value, false);
+            searchInput.placeholder = (cat === 'music') ? "Search music..." : "Search videos...";
+            performSearch('', false);
         } else {
             searchInput.style.display = 'none';
-            if (cat === 'history') {
-                clearBtn.style.display = 'block';
-                renderList(historyList, false, false);
-            } else {
-                clearBtn.style.display = 'none';
-                if (cat === 'my-playlists') loadMyPlaylists();
-                else if (cat === 'favs') renderList(favorites, false, false);
-            }
+            clearBtn.style.display = (cat === 'history') ? 'block' : 'none';
+            
+            if (cat === 'history') renderList(historyList);
+            else if (cat === 'favs') renderList(favorites);
+            else if (cat === 'my-playlists') loadMyPlaylists();
         }
     }
 
-    function formatNumber(num) {
-        if (!num) return '0';
-        num = parseInt(num);
-        if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
-        if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
-        return num.toString();
-    }
+    async function performSearch(query, isAppend = false) {
+        if (isFetching || !API_KEY) return;
+        isFetching = true;
+        
+        const isMusic = (currentCategory === 'music');
+        let params = {
+            part: 'snippet',
+            type: 'video',
+            maxResults: 25,
+            q: query || (isMusic ? "top music hits" : "trending"),
+            pageToken: nextPageToken || ''
+        };
+        if (isMusic) params.videoCategoryId = '10';
 
-    function clearHistory() {
-        historyList = [];
-        localStorage.setItem('yt_history', JSON.stringify(historyList));
-        renderList(historyList, false, false);
+        try {
+            const res = await gapi.client.youtube.search.list(params);
+            nextPageToken = res.result.nextPageToken;
+            renderList(res.result.items, false, isAppend);
+        } catch (e) { console.error(e); }
+        finally { isFetching = false; }
     }
 
     async function loadMyPlaylists() {
         if (!gapi.client.getToken()) {
-            document.getElementById('content-list').innerHTML = '<div style="padding:20px; text-align:center;">Please click "Connect YT" to view your playlists.</div>';
+            document.getElementById('content-list').innerHTML = '<div style="padding:20px; text-align:center;">Connect YouTube to view your playlists.</div>';
             return;
         }
         try {
@@ -495,176 +376,7 @@
         } catch (e) { console.error(e); }
     }
 
-    function handleSearch(e) { if (e.key === 'Enter') performSearch(e.target.value, false); }
-
-    async function performSearch(query, isAppend = false) {
-        if (isFetching) return;
-        isFetching = true;
-        
-        // Ensure default search terms based on current category
-        const defaultTerm = currentCategory === 'music' ? 'top music hits' : 'trending videos';
-        let params = { 
-            q: query || defaultTerm, 
-            part: 'snippet', 
-            type: 'video', 
-            maxResults: 30, // Request slightly more to allow for category filtering
-            pageToken: nextPageToken || ''
-        };
-        
-        // Target Category ID 10 is strictly Music on YouTube
-        if (currentCategory === 'music') params.videoCategoryId = '10'; 
-
-        try {
-            const res = await gapi.client.youtube.search.list(params);
-            let items = res.result.items;
-            nextPageToken = res.result.nextPageToken;
-            
-            // Double-check logic: If in music mode, double-verify category in case search query is messy
-            // This prevents "Playlists" or "Interviews" from leaking in if not tagged as music
-            if (currentCategory === 'music') {
-                // To be strictly thorough, we'd need to fetch detail list, but 
-                // the videoCategoryId param in search is usually reliable.
-                // We'll keep items as-is but filter out anything that doesn't look like a music video if needed.
-            }
-
-            if (isAppend) {
-                activeList = activeList.concat(items);
-            } else {
-                activeList = items;
-            }
-            
-            renderList(items, false, isAppend);
-        } catch (e) { console.error("Search Error", e); }
-        finally { isFetching = false; }
-    }
-
-    async function loadNextPage() {
-        if (currentPlaylistId) {
-            loadPlaylistVideos(currentPlaylistId, true);
-        } else if (currentCategory === 'music' || currentCategory === 'video') {
-            performSearch(document.getElementById('search-input').value, true);
-        }
-    }
-
-    function toggleFavorite(item, event) {
-        event.stopPropagation();
-        const itemId = item.id.videoId || item.id || item.contentDetails?.videoId;
-        const exists = favorites.find(f => (f.id.videoId || f.id || f.contentDetails?.videoId) === itemId);
-        if (exists) {
-            favorites = favorites.filter(f => (f.id.videoId || f.id || f.contentDetails?.videoId) !== itemId);
-        } else {
-            favorites.unshift(item);
-        }
-        localStorage.setItem('yt_favorites', JSON.stringify(favorites));
-        if (currentCategory === 'favs') renderList(favorites, false, false);
-        else {
-            const btn = event.currentTarget;
-            btn.classList.toggle('is-fav');
-            btn.innerText = btn.classList.contains('is-fav') ? '❤️' : '♡';
-        }
-    }
-
-    async function fetchStatsForItems(items) {
-        const ids = items.map(item => item.id.videoId || item.id || item.contentDetails?.videoId).filter(id => id).join(',');
-        if (!ids) return {};
-        try {
-            const res = await gapi.client.youtube.videos.list({ part: 'statistics', id: ids });
-            const statsMap = {};
-            res.result.items.forEach(v => { statsMap[v.id] = v.statistics; });
-            return statsMap;
-        } catch (e) { return {}; }
-    }
-
-    async function renderList(items, isPlaylist = false, isAppend = false) {
-        const container = document.getElementById('content-list');
-        if (!isAppend) {
-            container.innerHTML = '';
-            container.scrollTop = 0;
-        }
-        
-        const oldAnchor = document.getElementById('scroll-anchor');
-        if (oldAnchor) oldAnchor.remove();
-
-        if (!items || items.length === 0) {
-            if (!isAppend) {
-                container.innerHTML = `<div style="padding:40px; opacity:0.5; text-align:center;">Empty</div>`;
-            }
-            return;
-        }
-
-        // Only fetch stats for standard video lists, not the playlist-browsing view
-        let statsMap = {};
-        if (!isPlaylist && currentCategory !== 'my-playlists') {
-            statsMap = await fetchStatsForItems(items);
-        }
-
-        items.forEach((item) => {
-            const card = document.createElement('div');
-            card.className = 'item-card';
-            const s = item.snippet;
-            if(!s) return;
-
-            const vid = item.id.videoId || item.id || item.contentDetails?.videoId;
-            const isFav = favorites.some(f => (f.id.videoId || f.id || f.contentDetails?.videoId) === vid);
-            
-            const stats = statsMap[vid] || {};
-            const viewCount = formatNumber(stats.viewCount);
-            const likeCount = formatNumber(stats.likeCount);
-
-            card.onclick = () => { 
-                if (isPlaylist) {
-                    currentPlaylistId = item.id;
-                    nextPageToken = null;
-                    loadPlaylistVideos(item.id, false); 
-                } else {
-                    playItem(vid);
-                    addToHistory(item);
-                }
-            };
-            
-            // Critical Fix: Explicitly label as Playlist if it's a playlist item 
-            // to avoid leaking metadata from previous categories
-            const subtext = isPlaylist ? 'Playlist' : s.channelTitle;
-            
-            card.innerHTML = `
-                <img src="${s.thumbnails?.medium?.url || s.thumbnails?.default?.url}">
-                <div class="item-details">
-                    <div class="title-wrapper">
-                        <div class="item-title">${s.title}</div>
-                    </div>
-                    <div class="item-meta">
-                        <span class="channel-name">${subtext}</span>
-                        ${!isPlaylist && viewCount !== '0' ? `
-                            <span class="stats-badge">👁️ ${viewCount}</span>
-                            <span class="stats-badge">👍 ${likeCount}</span>
-                        ` : ''}
-                    </div>
-                </div>
-                ${!isPlaylist ? `<button class="heart-btn ${isFav ? 'is-fav' : ''}" onclick="toggleFavorite(${JSON.stringify(item).replace(/"/g, '&quot;')}, event)">${isFav ? '❤️' : '♡'}</button>` : ''}
-            `;
-            container.appendChild(card);
-
-            const titleEl = card.querySelector('.item-title');
-            const wrapperEl = card.querySelector('.title-wrapper');
-            if (titleEl.offsetWidth > wrapperEl.offsetWidth) {
-                titleEl.innerHTML += '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' + titleEl.innerHTML;
-            } else {
-                titleEl.style.animation = 'none';
-            }
-        });
-
-        if (nextPageToken) {
-            const anchor = document.createElement('div');
-            anchor.id = 'scroll-anchor';
-            anchor.innerHTML = '<span>Loading more...</span>';
-            container.appendChild(anchor);
-            observer.observe(anchor);
-        }
-    }
-
     async function loadPlaylistVideos(playlistId, isAppend = false) {
-        if (isFetching) return;
-        isFetching = true;
         try {
             const res = await gapi.client.youtube.playlistItems.list({ 
                 playlistId: playlistId, 
@@ -672,41 +384,110 @@
                 maxResults: 25,
                 pageToken: nextPageToken || ''
             });
-            const items = res.result.items;
             nextPageToken = res.result.nextPageToken;
-            if (isAppend) activeList = activeList.concat(items);
-            else activeList = items;
-            renderList(items, false, isAppend);
+            renderList(res.result.items, false, isAppend);
         } catch (e) { console.error(e); }
-        finally { isFetching = false; }
     }
 
-    function shuffleCurrentList() {
-        if (activeList.length === 0) return;
-        let shuffled = [...activeList];
-        for (let i = shuffled.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    async function renderList(items, isFolder = false, isAppend = false) {
+        const container = document.getElementById('content-list');
+        if (!isAppend) container.innerHTML = '';
+
+        if (!items || items.length === 0) {
+            container.innerHTML = '<div style="padding:20px; text-align:center; opacity:0.5;">No content found.</div>';
+            return;
         }
-        activeList = shuffled;
-        renderList(activeList, false, false);
-        const firstItem = activeList[0];
-        const vid = firstItem.id.videoId || firstItem.id || firstItem.contentDetails?.videoId;
-        playItem(vid);
+
+        let statsMap = {};
+        if (!isFolder && currentCategory !== 'my-playlists') {
+            const ids = items.map(i => i.id.videoId || i.id || i.contentDetails?.videoId).filter(id => id).join(',');
+            if (ids) {
+                const res = await gapi.client.youtube.videos.list({ part: 'statistics', id: ids });
+                res.result.items.forEach(v => { statsMap[v.id] = v.statistics; });
+            }
+        }
+
+        items.forEach(item => {
+            const s = item.snippet;
+            const vid = item.id.videoId || item.id || item.contentDetails?.videoId;
+            const card = document.createElement('div');
+            card.className = 'item-card';
+            
+            const stats = statsMap[vid] || {};
+            const views = stats.viewCount ? formatNum(stats.viewCount) : '';
+            const likes = stats.likeCount ? formatNum(stats.likeCount) : '';
+
+            card.onclick = () => {
+                if (isFolder && currentCategory === 'my-playlists') {
+                    currentPlaylistId = item.id;
+                    nextPageToken = null;
+                    loadPlaylistVideos(item.id, false);
+                } else {
+                    playItem(vid);
+                    addToHistory(item);
+                }
+            };
+
+            card.innerHTML = `
+                <img src="${s.thumbnails.medium.url}">
+                <div class="item-details">
+                    <div class="item-title">${s.title}</div>
+                    <div class="item-meta">
+                        <span class="channel-name">${isFolder ? 'Playlist' : s.channelTitle}</span>
+                        ${views ? `<span class="stats-badge">👁️ ${views}</span>` : ''}
+                        ${likes ? `<span class="stats-badge">👍 ${likes}</span>` : ''}
+                    </div>
+                </div>
+            `;
+            container.appendChild(card);
+        });
     }
 
-    function playItem(id) { if (player?.loadVideoById) player.loadVideoById(id); }
+    function clearHistory() {
+        historyList = [];
+        localStorage.removeItem('yt_history');
+        renderList([]);
+    }
 
+    function formatNum(n) {
+        n = parseInt(n);
+        if (n >= 1000000) return (n/1000000).toFixed(1) + 'M';
+        if (n >= 1000) return (n/1000).toFixed(1) + 'K';
+        return n;
+    }
+
+    function handleSearch(e) { if (e.key === 'Enter') performSearch(e.target.value, false); }
+    function playItem(id) { if (player?.loadVideoById) player.loadVideoById(id); }
+    
     function addToHistory(item) {
-        const id = item.id.videoId || item.id || item.contentDetails?.videoId;
-        historyList = [item, ...historyList.filter(i => (i.id.videoId || i.id || i.contentDetails?.videoId) !== id)].slice(0, 50);
+        historyList = [item, ...historyList.filter(i => (i.id.videoId || i.id || i.contentDetails?.videoId) !== (item.id.videoId || item.id || item.contentDetails?.videoId))].slice(0, 50);
         localStorage.setItem('yt_history', JSON.stringify(historyList));
     }
+
+    function showSettings() { document.getElementById('modal-settings').style.display = 'flex'; }
+    function hideSettings() { document.getElementById('modal-settings').style.display = 'none'; }
+    
+    function saveSettings() {
+        localStorage.setItem('yt_client_id', document.getElementById('input-client-id').value);
+        localStorage.setItem('yt_api_key', document.getElementById('input-api-key').value);
+        location.reload();
+    }
+
+    function handleAuthClick() {
+        tokenClient.callback = (resp) => { if (!resp.error) setCategory('my-playlists'); };
+        tokenClient.requestAccessToken({prompt: 'consent'});
+    }
+
+    function handleSidebarScroll() {
+        const btn = document.getElementById('jump-to-top');
+        btn.style.display = document.getElementById('content-list').scrollTop > 300 ? 'flex' : 'none';
+    }
+    function scrollToTop() { document.getElementById('content-list').scrollTo({top:0, behavior:'smooth'}); }
 
     var tag = document.createElement('script'); tag.src = "https://www.youtube.com/iframe_api";
     document.getElementsByTagName('script')[0].parentNode.insertBefore(tag, null);
     function onYouTubeIframeAPIReady() {
-        player = new YT.Player('player', { height: '100%', width: '100%', playerVars: { 'playsinline': 1, 'autoplay': 1 } });
+        player = new YT.Player('player', { height: '100%', width: '100%', playerVars: { 'autoplay': 1, 'playsinline': 1 } });
     }
 </script>
 </body>
