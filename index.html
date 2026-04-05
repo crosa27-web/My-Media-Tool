@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>My Media Tool</title>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="https://apis.google.com/js/api.js"></script>
@@ -36,6 +36,7 @@
             color: var(--text-color);
             display: flex;
             height: 100vh;
+            height: -webkit-fill-available;
             overflow: hidden;
             transition: background 0.3s ease;
         }
@@ -47,6 +48,7 @@
             flex-direction: column;
             border-right: 1px solid rgba(0,0,0,0.1);
             z-index: 10;
+            height: 100%;
         }
 
         #display-area { 
@@ -59,23 +61,13 @@
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        #display-area.mini-player {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            width: 300px;
-            height: 168px;
-            z-index: 100;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        }
-
         .header {
             padding: 15px;
             display: flex;
             flex-direction: column;
             gap: 12px;
             border-bottom: 1px solid rgba(0,0,0,0.1);
+            flex-shrink: 0;
         }
 
         .top-row {
@@ -113,6 +105,7 @@
             white-space: nowrap;
             scrollbar-width: none;
             -ms-overflow-style: none;
+            flex-shrink: 0;
         }
         .tabs-container::-webkit-scrollbar { display: none; }
 
@@ -139,7 +132,7 @@
 
         .tab.active { background: var(--accent-color); color: white; }
 
-        .search-box { padding: 15px; }
+        .action-bar { padding: 15px; flex-shrink: 0; display: flex; gap: 10px; }
 
         #search-input {
             width: 100%;
@@ -152,13 +145,29 @@
             outline: none;
         }
 
+        .clear-btn {
+            background: rgba(255, 0, 0, 0.1);
+            color: #ff4444;
+            border: 1px solid rgba(255, 0, 0, 0.2);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            display: none;
+        }
+        .clear-btn:hover { background: rgba(255, 0, 0, 0.2); }
+
         #content-list {
             flex: 1;
             overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
             padding: 10px;
             display: flex;
             flex-direction: column;
             gap: 10px;
+            overscroll-behavior-y: contain;
         }
 
         .item-card {
@@ -169,6 +178,8 @@
             border-radius: 10px;
             cursor: pointer;
             align-items: center;
+            flex-shrink: 0;
+            position: relative;
         }
         .item-card:hover { background: var(--item-hover); }
 
@@ -180,9 +191,33 @@
             flex-shrink: 0;
         }
 
-        .item-details { flex-grow: 1; overflow: hidden; }
-        .item-title { font-size: 13px; font-weight: 600; line-height: 1.2; }
-        .item-meta { font-size: 11px; color: var(--secondary-text); margin-top: 4px; }
+        .item-details { flex-grow: 1; overflow: hidden; padding-right: 40px; }
+        .item-title { font-size: 13px; font-weight: 600; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .item-meta { font-size: 11px; color: var(--secondary-text); margin-top: 4px; display: flex; align-items: center; gap: 8px; }
+        
+        .stats-badge {
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            opacity: 0.8;
+        }
+
+        .heart-btn {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 18px;
+            padding: 5px;
+            color: #ccc;
+            transition: scale 0.2s;
+            z-index: 5;
+        }
+        .heart-btn:active { scale: 1.3; }
+        .heart-btn.is-fav { color: #ff4444; }
 
         #video-container { width: 100%; height: 100%; }
 
@@ -213,13 +248,7 @@
                 flex: none;
                 order: -1; 
             }
-            #sidebar { width: 100%; flex: 1; }
-            #display-area.mini-player {
-                height: 100px;
-                width: 180px;
-                bottom: 10px;
-                right: 10px;
-            }
+            #sidebar { width: 100%; flex: 1; height: 65vh; }
         }
     </style>
 </head>
@@ -237,8 +266,7 @@
             <button id="auth-btn" onclick="handleAuthClick()">Connect YT</button>
             <div class="btn-group">
                 <button class="icon-btn" onclick="shuffleCurrentList()" title="Shuffle">🔀</button>
-                <button class="icon-btn" onclick="toggleMiniMode()" title="Mini Player">🔳</button>
-                <button class="icon-btn" onclick="showSettings()">⚙️</button>
+                <button class="icon-btn" onclick="showSettings()" title="Settings">⚙️</button>
             </div>
         </div>
         <div class="tabs-container">
@@ -251,8 +279,9 @@
             </div>
         </div>
     </div>
-    <div class="search-box" id="search-box-container">
+    <div class="action-bar">
         <input type="text" id="search-input" placeholder="Search music..." onkeypress="handleSearch(event)">
+        <button id="clear-history-btn" class="clear-btn" onclick="clearHistory()">Clear History</button>
     </div>
     <div id="content-list"></div>
 </div>
@@ -294,7 +323,6 @@
         });
     }
 
-    function toggleMiniMode() { document.getElementById('display-area').classList.toggle('mini-player'); }
     function showSettings() { document.getElementById('modal-settings').style.display = 'flex'; }
     function closeModals() { document.querySelectorAll('.modal-overlay').forEach(m => m.style.display = 'none'); }
     
@@ -317,17 +345,39 @@
         const isMusic = (cat === 'music');
         document.body.className = isMusic ? 'music-mode' : '';
         
-        const searchBox = document.getElementById('search-box-container');
+        const searchInput = document.getElementById('search-input');
+        const clearBtn = document.getElementById('clear-history-btn');
+
         if (cat === 'music' || cat === 'video') {
-            searchBox.style.display = 'block';
-            document.getElementById('search-input').placeholder = isMusic ? "Search music..." : "Search videos...";
-            performSearch(document.getElementById('search-input').value);
+            searchInput.style.display = 'block';
+            clearBtn.style.display = 'none';
+            searchInput.placeholder = isMusic ? "Search music..." : "Search videos...";
+            performSearch(searchInput.value);
         } else {
-            searchBox.style.display = 'none';
-            if (cat === 'my-playlists') loadMyPlaylists();
-            else if (cat === 'favs') renderList(favorites);
-            else if (cat === 'history') renderList(historyList);
+            searchInput.style.display = 'none';
+            if (cat === 'history') {
+                clearBtn.style.display = 'block';
+                renderList(historyList);
+            } else {
+                clearBtn.style.display = 'none';
+                if (cat === 'my-playlists') loadMyPlaylists();
+                else if (cat === 'favs') renderList(favorites);
+            }
         }
+    }
+
+    function formatNumber(num) {
+        if (!num) return '0';
+        num = parseInt(num);
+        if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+        if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+        return num.toString();
+    }
+
+    function clearHistory() {
+        historyList = [];
+        localStorage.setItem('yt_history', JSON.stringify(historyList));
+        renderList(historyList);
     }
 
     async function loadMyPlaylists() {
@@ -359,19 +409,74 @@
         } catch (e) { console.error("Search Error", e); }
     }
 
-    function renderList(items, isPlaylist = false) {
+    function toggleFavorite(item, event) {
+        event.stopPropagation();
+        const itemId = item.id.videoId || item.id || item.contentDetails?.videoId;
+        const exists = favorites.find(f => (f.id.videoId || f.id || f.contentDetails?.videoId) === itemId);
+        
+        if (exists) {
+            favorites = favorites.filter(f => (f.id.videoId || f.id || f.contentDetails?.videoId) !== itemId);
+        } else {
+            favorites.unshift(item);
+        }
+        
+        localStorage.setItem('yt_favorites', JSON.stringify(favorites));
+        
+        if (currentCategory === 'favs') {
+            renderList(favorites);
+        } else {
+            const btn = event.currentTarget;
+            btn.classList.toggle('is-fav');
+            btn.innerText = btn.classList.contains('is-fav') ? '❤️' : '♡';
+        }
+    }
+
+    async function fetchStatsForItems(items) {
+        const ids = items.map(item => item.id.videoId || item.id || item.contentDetails?.videoId).filter(id => id).join(',');
+        if (!ids) return {};
+        try {
+            const res = await gapi.client.youtube.videos.list({
+                part: 'statistics',
+                id: ids
+            });
+            const statsMap = {};
+            res.result.items.forEach(v => {
+                statsMap[v.id] = v.statistics;
+            });
+            return statsMap;
+        } catch (e) {
+            console.error("Stats Fetch Error", e);
+            return {};
+        }
+    }
+
+    async function renderList(items, isPlaylist = false) {
         const container = document.getElementById('content-list');
         container.innerHTML = '';
+        container.scrollTop = 0;
+        
         if (!items || items.length === 0) {
-            container.innerHTML = '<div style="padding:20px; opacity:0.5; text-align:center;">No items found</div>';
+            container.innerHTML = `<div style="padding:40px; opacity:0.5; text-align:center;">${currentCategory === 'history' ? 'History is empty' : 'No items found'}</div>`;
             return;
         }
+
+        // Fetch stats if not a playlist list
+        let statsMap = {};
+        if (!isPlaylist) {
+            statsMap = await fetchStatsForItems(items);
+        }
+
         items.forEach((item) => {
             const card = document.createElement('div');
             card.className = 'item-card';
             const s = item.snippet;
             const vid = item.id.videoId || item.id || item.contentDetails?.videoId;
+            const isFav = favorites.some(f => (f.id.videoId || f.id || f.contentDetails?.videoId) === vid);
             
+            const stats = statsMap[vid] || {};
+            const viewCount = formatNumber(stats.viewCount);
+            const likeCount = formatNumber(stats.likeCount);
+
             card.onclick = () => { 
                 if (isPlaylist) loadPlaylistVideos(item.id); 
                 else {
@@ -384,8 +489,15 @@
                 <img src="${s.thumbnails.medium.url}">
                 <div class="item-details">
                     <div class="item-title">${s.title}</div>
-                    <div class="item-meta">${isPlaylist ? 'Playlist' : s.channelTitle}</div>
+                    <div class="item-meta">
+                        <span>${isPlaylist ? 'Playlist' : s.channelTitle}</span>
+                        ${!isPlaylist && viewCount !== '0' ? `
+                            <span class="stats-badge">👁️ ${viewCount}</span>
+                            <span class="stats-badge">👍 ${likeCount}</span>
+                        ` : ''}
+                    </div>
                 </div>
+                ${!isPlaylist ? `<button class="heart-btn ${isFav ? 'is-fav' : ''}" onclick="toggleFavorite(${JSON.stringify(item).replace(/"/g, '&quot;')}, event)">${isFav ? '❤️' : '♡'}</button>` : ''}
             `;
             container.appendChild(card);
         });
@@ -428,3 +540,4 @@
 </script>
 </body>
 </html>
+
