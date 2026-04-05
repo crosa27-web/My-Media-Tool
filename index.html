@@ -3,30 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Media Tool - Virtual Scroll Edition</title>
+    <title>My Media Tool</title>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="https://apis.google.com/js/api.js"></script>
     <style>
         :root {
-            --bg-color: #0f172a;
-            --sidebar-color: #1e293b;
+            --bg-color: #f0f2f5;
+            --sidebar-color: #ffffff;
             --accent-color: #ff0000;
-            --text-color: #f8fafc;
-            --secondary-text: #94a3b8;
-            --item-hover: #334155;
-            --card-bg: rgba(255, 255, 255, 0.05);
+            --text-color: #1c1e21;
+            --secondary-text: #606770;
+            --item-hover: #f2f3f5;
+            --card-bg: #ffffff;
             --player-bg: #000000;
-            --heart-color: #ff4757;
-            --border-color: rgba(255, 255, 255, 0.1);
-            --scrollbar-thumb: #475569;
         }
 
         .music-mode {
-            --accent-color: #1db954;
-            --bg-color: #050505;
+            --bg-color: #0a0a0a;
             --sidebar-color: #121212;
+            --accent-color: #1db954;
+            --text-color: #ffffff;
+            --secondary-text: #b3b3b3;
             --item-hover: #282828;
-            --scrollbar-thumb: #3f3f3f;
+            --card-bg: #181818;
+            --player-bg: #000000;
         }
 
         body {
@@ -36,261 +36,153 @@
             color: var(--text-color);
             display: flex;
             height: 100vh;
-            width: 100vw;
             overflow: hidden;
+            transition: background 0.3s ease;
         }
 
         #sidebar {
             width: 400px;
-            height: 100vh;
             background-color: var(--sidebar-color);
             display: flex;
             flex-direction: column;
-            border-right: 1px solid var(--border-color);
-            flex-shrink: 0;
-            position: relative;
+            border-right: 1px solid rgba(0,0,0,0.1);
+            z-index: 10;
         }
 
         #display-area { 
             flex: 1; 
+            position: relative; 
             background: var(--player-bg);
             display: flex;
             align-items: center;
             justify-content: center;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        #display-area.mini-player {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 300px;
+            height: 168px;
+            z-index: 100;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
 
         .header {
-            padding: 20px;
-            flex-shrink: 0;
-            border-bottom: 1px solid var(--border-color);
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
         }
 
         .top-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 15px;
         }
+
+        .btn-group { display: flex; gap: 8px; align-items: center; }
 
         #auth-btn {
             background-color: var(--accent-color);
             color: white;
             border: none;
-            padding: 8px 16px;
-            border-radius: 20px;
+            padding: 8px 12px;
+            border-radius: 6px;
             cursor: pointer;
             font-weight: 600;
             font-size: 12px;
         }
 
-        .btn-group { display: flex; gap: 8px; }
-
         .icon-btn {
             font-size: 18px;
             cursor: pointer;
-            background: rgba(255,255,255,0.05);
-            border: 1px solid var(--border-color);
+            opacity: 0.6;
+            background: none;
+            border: none;
             color: var(--text-color);
-            padding: 6px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            padding: 5px;
         }
+        .icon-btn:hover { opacity: 1; }
+
+        .tabs-container {
+            overflow-x: auto;
+            white-space: nowrap;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        .tabs-container::-webkit-scrollbar { display: none; }
 
         .tabs {
             display: flex;
-            background: rgba(0,0,0,0.2);
+            background: rgba(0,0,0,0.05);
             padding: 4px;
-            border-radius: 10px;
-            gap: 4px;
+            border-radius: 8px;
+            gap: 2px;
+            width: max-content;
+            min-width: 100%;
         }
 
         .tab {
-            flex: 1;
-            text-align: center;
-            padding: 8px 4px;
+            padding: 8px 12px;
             cursor: pointer;
             border-radius: 6px;
             font-size: 11px;
             font-weight: 700;
             text-transform: uppercase;
+            transition: 0.2s;
             color: var(--secondary-text);
         }
 
         .tab.active { background: var(--accent-color); color: white; }
 
-        .search-box { 
-            padding: 15px 20px; 
-            flex-shrink: 0;
-            background: rgba(0,0,0,0.1);
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
+        .search-box { padding: 15px; }
 
         #search-input {
-            flex: 1;
-            padding: 10px 15px;
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
+            width: 100%;
+            padding: 12px 16px;
+            border-radius: 20px;
+            border: 1px solid rgba(0,0,0,0.1);
             background: var(--bg-color);
             color: var(--text-color);
             box-sizing: border-box;
             outline: none;
         }
 
-        #clear-history-btn {
-            display: none;
-            background: rgba(255, 71, 87, 0.1);
-            color: var(--heart-color);
-            border: 1px solid var(--heart-color);
-            padding: 8px 12px;
-            border-radius: 8px;
-            font-size: 11px;
-            font-weight: bold;
-            cursor: pointer;
-            white-space: nowrap;
-        }
-        #clear-history-btn.confirming {
-            background: var(--heart-color);
-            color: white;
-        }
-
-        /* TOAST NOTIFICATION */
-        #undo-toast {
-            position: absolute;
-            bottom: -60px;
-            left: 20px;
-            right: 20px;
-            background: #334155;
-            color: white;
-            padding: 12px 20px;
-            border-radius: 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
-            transition: bottom 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            z-index: 100;
-        }
-        #undo-toast.show { bottom: 20px; }
-        #undo-btn {
-            color: var(--accent-color);
-            font-weight: 800;
-            text-transform: uppercase;
-            cursor: pointer;
-            font-size: 12px;
-            border: none;
-            background: none;
-        }
-
-        /* VIRTUAL SCROLL CONTAINERS */
-        #viewport {
+        #content-list {
             flex: 1;
             overflow-y: auto;
-            position: relative;
-            scrollbar-width: thin;
-            scrollbar-color: var(--scrollbar-thumb) transparent;
-        }
-
-        #viewport::-webkit-scrollbar { width: 8px; }
-        #viewport::-webkit-scrollbar-thumb {
-            background-color: var(--scrollbar-thumb);
-            border-radius: 20px;
-        }
-
-        #scroll-content {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            pointer-events: none;
-        }
-
-        #visible-items {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            padding: 0 20px;
-            box-sizing: border-box;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
 
         .item-card {
-            position: absolute;
-            left: 20px;
-            right: 20px;
-            height: 100px; /* Increased height for stats */
             display: flex;
             gap: 12px;
-            padding: 8px;
+            padding: 10px;
             background: var(--card-bg);
-            border-radius: 8px;
+            border-radius: 10px;
             cursor: pointer;
             align-items: center;
-            border: 1px solid transparent;
-            transition: background 0.2s;
         }
-        .item-card:hover { 
-            background: var(--item-hover);
-            border-color: var(--border-color);
-        }
+        .item-card:hover { background: var(--item-hover); }
 
-        .thumb-container {
-            position: relative;
-            width: 120px;
-            height: 68px;
+        .item-card img {
+            width: 100px;
+            height: 56px;
+            border-radius: 6px;
+            object-fit: cover;
             flex-shrink: 0;
         }
 
-        .item-card img {
-            width: 100%;
-            height: 100%;
-            border-radius: 4px;
-            object-fit: cover;
-        }
-
-        .duration-badge {
-            position: absolute;
-            bottom: 4px;
-            right: 4px;
-            background: rgba(0,0,0,0.8);
-            color: white;
-            font-size: 10px;
-            padding: 2px 4px;
-            border-radius: 2px;
-            font-weight: bold;
-        }
-
-        .item-details { flex: 1; min-width: 0; }
-        .item-title { 
-            font-size: 13px; 
-            font-weight: 500; 
-            white-space: nowrap; 
-            overflow: hidden; 
-            text-overflow: ellipsis;
-            margin-bottom: 2px;
-        }
-        .item-channel { font-size: 11px; color: var(--secondary-text); margin-bottom: 4px; }
-        
-        .item-stats {
-            display: flex;
-            gap: 12px;
-            font-size: 10px;
-            color: var(--secondary-text);
-            margin-top: 2px;
-        }
-        .stat-item { display: flex; align-items: center; gap: 4px; }
-
-        .fav-btn {
-            background: none;
-            border: none;
-            font-size: 16px;
-            cursor: pointer;
-            color: var(--secondary-text);
-        }
-        .fav-btn.active { color: var(--heart-color); }
+        .item-details { flex-grow: 1; overflow: hidden; }
+        .item-title { font-size: 13px; font-weight: 600; line-height: 1.2; }
+        .item-meta { font-size: 11px; color: var(--secondary-text); margin-top: 4px; }
 
         #video-container { width: 100%; height: 100%; }
 
@@ -298,7 +190,7 @@
             display: none;
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.9);
+            background: rgba(0,0,0,0.8);
             z-index: 200;
             align-items: center;
             justify-content: center;
@@ -306,20 +198,32 @@
 
         .modal-content {
             background: var(--sidebar-color);
-            padding: 30px;
+            color: var(--text-color);
+            padding: 25px;
             border-radius: 12px;
-            width: 350px;
-            border: 1px solid var(--border-color);
+            width: 90%;
+            max-width: 350px;
         }
 
         @media (max-width: 900px) {
             body { flex-direction: column; }
-            #sidebar { width: 100%; height: 60vh; }
-            #display-area { height: 40vh; flex: none; }
+            #display-area { 
+                width: 100%; 
+                height: 35vh; 
+                flex: none;
+                order: -1; 
+            }
+            #sidebar { width: 100%; flex: 1; }
+            #display-area.mini-player {
+                height: 100px;
+                width: 180px;
+                bottom: 10px;
+                right: 10px;
+            }
         }
     </style>
 </head>
-<body>
+<body class="music-mode">
 
 <div id="display-area">
     <div id="video-container">
@@ -330,70 +234,52 @@
 <div id="sidebar">
     <div class="header">
         <div class="top-row">
-            <button id="auth-btn" onclick="handleAuthClick()">Connect Account</button>
+            <button id="auth-btn" onclick="handleAuthClick()">Connect YT</button>
             <div class="btn-group">
                 <button class="icon-btn" onclick="shuffleCurrentList()" title="Shuffle">🔀</button>
-                <button class="icon-btn" onclick="showSettings()" title="Settings">⚙️</button>
+                <button class="icon-btn" onclick="toggleMiniMode()" title="Mini Player">🔳</button>
+                <button class="icon-btn" onclick="showSettings()">⚙️</button>
             </div>
         </div>
-        <div class="tabs">
-            <div id="tab-video" class="tab active" onclick="setCategory('video')">Video</div>
-            <div id="tab-music" class="tab" onclick="setCategory('music')">Music</div>
-            <div id="tab-favs" class="tab" onclick="setCategory('favs')">Favs</div>
-            <div id="tab-history" class="tab" onclick="setCategory('history')">History</div>
+        <div class="tabs-container">
+            <div class="tabs">
+                <div id="tab-music" class="tab active" onclick="setCategory('music')">Music</div>
+                <div id="tab-video" class="tab" onclick="setCategory('video')">Video</div>
+                <div id="tab-my-playlists" class="tab" onclick="setCategory('my-playlists')">Playlists</div>
+                <div id="tab-favs" class="tab" onclick="setCategory('favs')">Favs</div>
+                <div id="tab-history" class="tab" onclick="setCategory('history')">History</div>
+            </div>
         </div>
     </div>
-    <div class="search-box">
-        <input type="text" id="search-input" placeholder="Search..." onkeypress="handleSearch(event)">
-        <button id="clear-history-btn" onclick="handleClearHistory()">Clear History</button>
+    <div class="search-box" id="search-box-container">
+        <input type="text" id="search-input" placeholder="Search music..." onkeypress="handleSearch(event)">
     </div>
-    
-    <div id="viewport">
-        <div id="scroll-content"></div>
-        <div id="visible-items"></div>
-    </div>
-
-    <div id="undo-toast">
-        <span style="font-size: 13px;">History cleared</span>
-        <button id="undo-btn" onclick="undoClearHistory()">Undo</button>
-    </div>
+    <div id="content-list"></div>
 </div>
 
 <div id="modal-settings" class="modal-overlay">
     <div class="modal-content">
-        <h3>API Setup</h3>
-        <input type="text" id="input-client-id" placeholder="Client ID" style="width:100%; margin-bottom:10px; padding:10px; background:#000; color:#fff; border:1px solid #444;">
-        <input type="password" id="input-api-key" placeholder="API Key" style="width:100%; margin-bottom:15px; padding:10px; background:#000; color:#fff; border:1px solid #444;">
-        <button onclick="saveSettings()" style="width:100%; padding:10px; background:var(--accent-color); color:white; border:none; cursor:pointer; font-weight:bold;">Save & Reload</button>
+        <h3>API Settings</h3>
+        <input type="text" id="input-client-id" placeholder="Client ID" style="width:100%; margin-bottom:10px; padding:8px;">
+        <input type="password" id="input-api-key" placeholder="API Key" style="width:100%; margin-bottom:10px; padding:8px;">
+        <div style="display:flex; gap:10px;">
+            <button onclick="closeModals()" style="flex:1; padding:10px;">Cancel</button>
+            <button onclick="saveSettings()" style="flex:1; padding:10px; background:var(--accent-color); color:white; border:none;">Save</button>
+        </div>
     </div>
 </div>
 
 <script>
     let CLIENT_ID = localStorage.getItem('yt_client_id') || '';
     let API_KEY = localStorage.getItem('yt_api_key') || '';
-    let tokenClient, player, currentCategory = 'video';
-    
+    let tokenClient, player, currentCategory = 'music';
     let activeList = [];
-    let nextPageToken = '';
-    let isFetching = false;
-    let currentSearchQuery = '';
-    let isConfirmingClear = false;
-    let tempHistoryBuffer = null;
-    let undoTimeout = null;
-
-    // VIRTUAL SCROLL SETTINGS
-    const ITEM_HEIGHT = 110; 
-    const BUFFER_COUNT = 5;
-
     let historyList = JSON.parse(localStorage.getItem('yt_history') || '[]');
     let favorites = JSON.parse(localStorage.getItem('yt_favorites') || '[]');
 
     window.onload = function() {
         if (!CLIENT_ID || !API_KEY) showSettings();
-        else {
-            initGapi();
-            setupVirtualScroll();
-        }
+        else initGapi();
     };
 
     function initGapi() {
@@ -403,288 +289,141 @@
                 tokenClient = google.accounts.oauth2.initTokenClient({
                     client_id: CLIENT_ID, scope: "https://www.googleapis.com/auth/youtube.readonly", callback: ''
                 });
-            } catch(e) {}
+                performSearch('');
+            } catch(e) { console.error("GAPI Init Error", e); }
         });
     }
 
-    function setupVirtualScroll() {
-        const viewport = document.getElementById('viewport');
-        viewport.addEventListener('scroll', () => {
-            renderVirtualItems();
-            const scrollBottom = viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight;
-            if (scrollBottom < 300) {
-                if (!isFetching && nextPageToken && (currentCategory === 'video' || currentCategory === 'music')) {
-                    performSearch(currentSearchQuery, true);
-                }
-            }
-        });
-    }
-
-    /**
-     * Converts ISO 8601 duration (PT4M20S) to readable format (4:20)
-     */
-    function formatDuration(duration) {
-        if (!duration) return "0:00";
-        const match = duration.match(/PT(\d+H)?(\d+M)?(\d+S)?/);
-        const hours = (parseInt(match[1]) || 0);
-        const minutes = (parseInt(match[2]) || 0);
-        const seconds = (parseInt(match[3]) || 0);
-        
-        let result = "";
-        if (hours > 0) result += hours + ":";
-        result += (hours > 0 && minutes < 10 ? "0" + minutes : minutes) + ":";
-        result += (seconds < 10 ? "0" + seconds : seconds);
-        return result;
-    }
-
-    /**
-     * Formats numbers to K/M suffixes
-     */
-    function formatCount(num) {
-        if (num === undefined || num === null) return "0";
-        const n = parseInt(num);
-        if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
-        if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
-        return n.toString();
-    }
-
-    function renderVirtualItems() {
-        const viewport = document.getElementById('viewport');
-        const visibleContainer = document.getElementById('visible-items');
-        const scrollContent = document.getElementById('scroll-content');
-        
-        scrollContent.style.height = `${activeList.length * ITEM_HEIGHT}px`;
-
-        const scrollTop = viewport.scrollTop;
-        const viewportHeight = viewport.clientHeight;
-
-        const startIndex = Math.max(0, Math.floor(scrollTop / ITEM_HEIGHT) - BUFFER_COUNT);
-        const endIndex = Math.min(activeList.length - 1, Math.ceil((scrollTop + viewportHeight) / ITEM_HEIGHT) + BUFFER_COUNT);
-
-        visibleContainer.innerHTML = '';
-
-        for (let i = startIndex; i <= endIndex; i++) {
-            const item = activeList[i];
-            const vid = item.id.videoId || item.id || item.contentDetails?.videoId;
-            const isFav = favorites.some(f => (f.id.videoId || f.id || f.contentDetails?.videoId) === vid);
-            
-            // Access stored extra stats (duration, likes)
-            const stats = item.extraStats || { duration: '?:??', likes: '0', dislikes: '0', views: '0' };
-
-            const card = document.createElement('div');
-            card.className = 'item-card';
-            card.style.transform = `translateY(${i * ITEM_HEIGHT}px)`;
-            card.onclick = () => playItem(vid, item);
-            
-            card.innerHTML = `
-                <div class="thumb-container">
-                    <img src="${item.snippet.thumbnails.medium.url}">
-                    <div class="duration-badge">${stats.duration}</div>
-                </div>
-                <div class="item-details">
-                    <div class="item-title" title="${item.snippet.title}">${item.snippet.title}</div>
-                    <div class="item-channel">${item.snippet.channelTitle}</div>
-                    <div class="item-stats">
-                        <div class="stat-item" title="Likes">👍 ${formatCount(stats.likes)}</div>
-                        <div class="stat-item" title="Views">👁️ ${formatCount(stats.views)}</div>
-                    </div>
-                </div>
-                <button class="fav-btn ${isFav ? 'active' : ''}" onclick="event.stopPropagation(); toggleFav('${vid}', ${JSON.stringify(item).replace(/"/g, '&quot;')})">
-                    ${isFav ? '❤️' : '🤍'}
-                </button>
-            `;
-            visibleContainer.appendChild(card);
-        }
-    }
-
-    function showSettings() { 
-        document.getElementById('input-client-id').value = CLIENT_ID;
-        document.getElementById('input-api-key').value = API_KEY;
-        document.getElementById('modal-settings').style.display = 'flex'; 
-    }
+    function toggleMiniMode() { document.getElementById('display-area').classList.toggle('mini-player'); }
+    function showSettings() { document.getElementById('modal-settings').style.display = 'flex'; }
+    function closeModals() { document.querySelectorAll('.modal-overlay').forEach(m => m.style.display = 'none'); }
     
     function saveSettings() {
-        localStorage.setItem('yt_client_id', document.getElementById('input-client-id').value.trim());
-        localStorage.setItem('yt_api_key', document.getElementById('input-api-key').value.trim());
+        localStorage.setItem('yt_client_id', document.getElementById('input-client-id').value);
+        localStorage.setItem('yt_api_key', document.getElementById('input-api-key').value);
         location.reload();
     }
 
     function handleAuthClick() {
-        tokenClient.callback = async (resp) => { if (!resp.error) { document.getElementById('auth-btn').innerText = "Logged In"; performSearch(''); } };
+        tokenClient.callback = async (resp) => { if (!resp.error) { document.getElementById('auth-btn').innerText = "Connected"; } };
         tokenClient.requestAccessToken({prompt: gapi.client.getToken() ? '' : 'consent'});
     }
 
     function setCategory(cat) {
         currentCategory = cat;
-        nextPageToken = '';
-        activeList = [];
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
         document.getElementById(`tab-${cat}`).classList.add('active');
         
-        const clearBtn = document.getElementById('clear-history-btn');
-        clearBtn.style.display = (cat === 'history') ? 'block' : 'none';
-        resetClearConfirmation();
-
-        if (cat === 'music') document.body.classList.add('music-mode');
-        else document.body.classList.remove('music-mode');
+        const isMusic = (cat === 'music');
+        document.body.className = isMusic ? 'music-mode' : '';
         
-        if (cat === 'favs') {
-            activeList = [...favorites];
-            renderVirtualItems();
-        } else if (cat === 'history') {
-            activeList = [...historyList];
-            renderVirtualItems();
+        const searchBox = document.getElementById('search-box-container');
+        if (cat === 'music' || cat === 'video') {
+            searchBox.style.display = 'block';
+            document.getElementById('search-input').placeholder = isMusic ? "Search music..." : "Search videos...";
+            performSearch(document.getElementById('search-input').value);
         } else {
-            performSearch(document.getElementById('search-input').value || '');
+            searchBox.style.display = 'none';
+            if (cat === 'my-playlists') loadMyPlaylists();
+            else if (cat === 'favs') renderList(favorites);
+            else if (cat === 'history') renderList(historyList);
         }
-        document.getElementById('viewport').scrollTop = 0;
     }
 
-    async function performSearch(query, append = false) {
-        if (isFetching) return;
-        isFetching = true;
+    async function loadMyPlaylists() {
+        if (!gapi.client.getToken()) {
+            document.getElementById('content-list').innerHTML = '<div style="padding:20px; text-align:center;">Please click "Connect YT" to view your playlists.</div>';
+            return;
+        }
+        try {
+            const res = await gapi.client.youtube.playlists.list({ mine: true, part: 'snippet', maxResults: 50 });
+            renderList(res.result.items, true);
+        } catch (e) { console.error(e); }
+    }
 
+    function handleSearch(e) { if (e.key === 'Enter') performSearch(e.target.value); }
+
+    async function performSearch(query) {
         let params = { 
-            q: query || (currentCategory === 'music' ? 'top music hits' : 'trending'), 
+            q: query || (currentCategory === 'music' ? 'top hits' : 'trending'), 
             part: 'snippet', 
             type: 'video', 
-            maxResults: 25, 
-            pageToken: nextPageToken 
+            maxResults: 25 
         };
-        
-        if (currentCategory === 'music') params.videoCategoryId = '10';
+        if (currentCategory === 'music') params.videoCategoryId = '10'; 
 
         try {
             const res = await gapi.client.youtube.search.list(params);
-            let searchItems = res.result.items;
-            nextPageToken = res.result.nextPageToken || '';
+            activeList = res.result.items;
+            renderList(activeList);
+        } catch (e) { console.error("Search Error", e); }
+    }
+
+    function renderList(items, isPlaylist = false) {
+        const container = document.getElementById('content-list');
+        container.innerHTML = '';
+        if (!items || items.length === 0) {
+            container.innerHTML = '<div style="padding:20px; opacity:0.5; text-align:center;">No items found</div>';
+            return;
+        }
+        items.forEach((item) => {
+            const card = document.createElement('div');
+            card.className = 'item-card';
+            const s = item.snippet;
+            const vid = item.id.videoId || item.id || item.contentDetails?.videoId;
             
-            // Double-Check Logic: Fetch extra metadata (durations and stats)
-            const videoIds = searchItems.map(item => item.id.videoId).filter(id => !!id).join(',');
-            if (videoIds) {
-                const statsRes = await gapi.client.youtube.videos.list({
-                    part: 'contentDetails,statistics',
-                    id: videoIds
-                });
-                
-                const statsMap = {};
-                statsRes.result.items.forEach(v => {
-                    statsMap[v.id] = {
-                        duration: formatDuration(v.contentDetails.duration),
-                        likes: v.statistics.likeCount || 0,
-                        views: v.statistics.viewCount || 0
-                    };
-                });
-
-                // Merge stats into search items
-                searchItems = searchItems.map(item => ({
-                    ...item,
-                    extraStats: statsMap[item.id.videoId] || { duration: '?:??', likes: '0', views: '0' }
-                }));
-            }
-
-            if (append) activeList = activeList.concat(searchItems);
-            else activeList = searchItems;
+            card.onclick = () => { 
+                if (isPlaylist) loadPlaylistVideos(item.id); 
+                else {
+                    playItem(vid);
+                    addToHistory(item);
+                }
+            };
             
-            renderVirtualItems();
-        } catch (e) {
-            console.error("Search Error:", e);
-        } finally {
-            isFetching = false;
-        }
+            card.innerHTML = `
+                <img src="${s.thumbnails.medium.url}">
+                <div class="item-details">
+                    <div class="item-title">${s.title}</div>
+                    <div class="item-meta">${isPlaylist ? 'Playlist' : s.channelTitle}</div>
+                </div>
+            `;
+            container.appendChild(card);
+        });
     }
 
-    function handleClearHistory() {
-        const btn = document.getElementById('clear-history-btn');
-        if (!isConfirmingClear) {
-            isConfirmingClear = true;
-            btn.innerText = "Are you sure?";
-            btn.classList.add('confirming');
-            setTimeout(() => { if(isConfirmingClear) resetClearConfirmation(); }, 3000);
-        } else {
-            tempHistoryBuffer = [...historyList];
-            historyList = [];
-            localStorage.setItem('yt_history', JSON.stringify([]));
-            activeList = [];
-            renderVirtualItems();
-            resetClearConfirmation();
-            const toast = document.getElementById('undo-toast');
-            toast.classList.add('show');
-            if (undoTimeout) clearTimeout(undoTimeout);
-            undoTimeout = setTimeout(() => {
-                toast.classList.remove('show');
-                tempHistoryBuffer = null;
-            }, 4000);
-        }
-    }
-
-    function undoClearHistory() {
-        if (tempHistoryBuffer) {
-            historyList = tempHistoryBuffer;
-            localStorage.setItem('yt_history', JSON.stringify(historyList));
-            if (currentCategory === 'history') {
-                activeList = [...historyList];
-                renderVirtualItems();
-            }
-            document.getElementById('undo-toast').classList.remove('show');
-            tempHistoryBuffer = null;
-            if (undoTimeout) clearTimeout(undoTimeout);
-        }
-    }
-
-    function resetClearConfirmation() {
-        isConfirmingClear = false;
-        const btn = document.getElementById('clear-history-btn');
-        if (btn) {
-            btn.innerText = "Clear History";
-            btn.classList.remove('confirming');
-        }
-    }
-
-    function handleSearch(e) { 
-        if (e.key === 'Enter') {
-            currentSearchQuery = e.target.value;
-            nextPageToken = '';
-            performSearch(currentSearchQuery); 
-        }
-    }
-
-    function toggleFav(id, item) {
-        const idx = favorites.findIndex(f => (f.id.videoId || f.id || f.contentDetails?.videoId) === id);
-        if (idx > -1) favorites.splice(idx, 1);
-        else favorites.unshift(item);
-        localStorage.setItem('yt_favorites', JSON.stringify(favorites));
-        if (currentCategory === 'favs') activeList = [...favorites];
-        renderVirtualItems();
-    }
-
-    function playItem(id, item) { 
-        if (player?.loadVideoById) {
-            player.loadVideoById(id);
-            const exists = historyList.findIndex(h => (h.id.videoId || h.id || h.contentDetails?.videoId) === id);
-            if (exists > -1) historyList.splice(exists, 1);
-            historyList.unshift(item);
-            if (historyList.length > 200) historyList.pop();
-            localStorage.setItem('yt_history', JSON.stringify(historyList));
-            if (currentCategory === 'history') {
-                activeList = [...historyList];
-                renderVirtualItems();
-            }
-        }
+    async function loadPlaylistVideos(playlistId) {
+        try {
+            const res = await gapi.client.youtube.playlistItems.list({ playlistId: playlistId, part: 'snippet,contentDetails', maxResults: 50 });
+            activeList = res.result.items;
+            renderList(activeList);
+        } catch (e) { console.error(e); }
     }
 
     function shuffleCurrentList() {
-        if (activeList.length < 2) return;
-        activeList.sort(() => Math.random() - 0.5);
-        renderVirtualItems();
-        const first = activeList[0];
-        playItem(first.id.videoId || first.id || first.contentDetails?.videoId, first);
+        if (activeList.length === 0) return;
+        let shuffled = [...activeList];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        activeList = shuffled;
+        renderList(activeList);
+        const firstVid = activeList[0].id.videoId || activeList[0].id || activeList[0].contentDetails?.videoId;
+        playItem(firstVid);
+    }
+
+    function playItem(id) { if (player?.loadVideoById) player.loadVideoById(id); }
+
+    function addToHistory(item) {
+        const id = item.id.videoId || item.id;
+        historyList = [item, ...historyList.filter(i => (i.id.videoId || i.id) !== id)].slice(0, 50);
+        localStorage.setItem('yt_history', JSON.stringify(historyList));
     }
 
     var tag = document.createElement('script'); tag.src = "https://www.youtube.com/iframe_api";
     document.getElementsByTagName('script')[0].parentNode.insertBefore(tag, null);
     function onYouTubeIframeAPIReady() {
-        player = new YT.Player('player', { height: '100%', width: '100%', playerVars: { 'autoplay': 1, 'origin': window.location.origin } });
+        player = new YT.Player('player', { height: '100%', width: '100%', playerVars: { 'playsinline': 1, 'autoplay': 1 } });
     }
 </script>
 </body>
