@@ -48,6 +48,7 @@
             border-right: 1px solid rgba(0,0,0,0.1);
             z-index: 10;
             height: 100%;
+            position: relative;
         }
 
         #display-area { 
@@ -159,6 +160,7 @@
             display: flex;
             flex-direction: column;
             gap: 8px;
+            scroll-behavior: smooth;
         }
 
         .item-card {
@@ -170,7 +172,7 @@
             cursor: pointer;
             align-items: center;
             position: relative;
-            flex-shrink: 0; /* Ensures cards don't squash */
+            flex-shrink: 0;
         }
         .item-card:hover { background: var(--item-hover); }
 
@@ -190,7 +192,6 @@
             flex-direction: column;
         }
 
-        /* Horizontal Scroll Title Logic */
         .title-wrapper {
             width: 100%;
             overflow: hidden;
@@ -205,11 +206,10 @@
             line-height: 1.2;
         }
 
-        /* Animation trigger on card hover/active */
         .item-card:hover .item-title, 
         .item-card:active .item-title {
             animation: scroll-text 5s linear infinite;
-            padding-right: 50px; /* Gap for seamless loop */
+            padding-right: 50px;
         }
 
         @keyframes scroll-text {
@@ -249,6 +249,43 @@
         .heart-btn.is-fav { color: #ff4444; }
 
         #video-container { width: 100%; height: 100%; }
+
+        #scroll-anchor {
+            height: 20px;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px 0;
+            font-size: 12px;
+            color: var(--secondary-text);
+            flex-shrink: 0;
+        }
+
+        /* Jump to Top Button Styling */
+        #jump-to-top {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            width: 45px;
+            height: 45px;
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            display: none; /* Hidden by default */
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            z-index: 100;
+            font-size: 20px;
+            transition: transform 0.2s ease, opacity 0.2s ease;
+        }
+
+        #jump-to-top:hover {
+            transform: scale(1.1);
+        }
 
         .modal-overlay {
             display: none;
@@ -312,7 +349,12 @@
         <input type="text" id="search-input" placeholder="Search music..." onkeypress="handleSearch(event)">
         <button id="clear-history-btn" class="clear-btn" onclick="clearHistory()">Clear History</button>
     </div>
-    <div id="content-list"></div>
+    <div id="content-list" onscroll="handleSidebarScroll()"></div>
+    
+    <!-- Jump to Top Button -->
+    <button id="jump-to-top" onclick="scrollToTop()" title="Jump to Top">
+        <span style="transform: translateY(-2px);">↑</span>
+    </button>
 </div>
 
 <div id="modal-settings" class="modal-overlay">
@@ -334,11 +376,27 @@
     let activeList = [];
     let historyList = JSON.parse(localStorage.getItem('yt_history') || '[]');
     let favorites = JSON.parse(localStorage.getItem('yt_favorites') || '[]');
+    
+    // Virtual Scroll State
+    let nextPageToken = null;
+    let isFetching = false;
+    let currentPlaylistId = null;
+    let observer = null;
 
     window.onload = function() {
         if (!CLIENT_ID || !API_KEY) showSettings();
         else initGapi();
+        setupIntersectionObserver();
     };
+
+    function setupIntersectionObserver() {
+        const options = { root: document.getElementById('content-list'), threshold: 0.1 };
+        observer = new IntersectionObserver((entries) => {
+            if (entries[0].isIntersecting && !isFetching && nextPageToken) {
+                loadNextPage();
+            }
+        }, options);
+    }
 
     function initGapi() {
         gapi.load('client', async () => {
@@ -347,7 +405,7 @@
                 tokenClient = google.accounts.oauth2.initTokenClient({
                     client_id: CLIENT_ID, scope: "https://www.googleapis.com/auth/youtube.readonly", callback: ''
                 });
-                performSearch('');
+                performSearch('', false);
             } catch(e) { console.error("GAPI Init Error", e); }
         });
     }
@@ -366,8 +424,29 @@
         tokenClient.requestAccessToken({prompt: gapi.client.getToken() ? '' : 'consent'});
     }
 
+    // New: Handle sidebar scroll to show/hide jump button
+    function handleSidebarScroll() {
+        const list = document.getElementById('content-list');
+        const jumpBtn = document.getElementById('jump-to-top');
+        if (list.scrollTop > 300) {
+            jumpBtn.style.display = 'flex';
+        } else {
+            jumpBtn.style.display = 'none';
+        }
+    }
+
+    // New: Smooth scroll to top function
+    function scrollToTop() {
+        document.getElementById('content-list').scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
+    }
+
     function setCategory(cat) {
         currentCategory = cat;
+        nextPageToken = null;
+        currentPlaylistId = null;
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
         document.getElementById(`tab-${cat}`).classList.add('active');
         
@@ -381,16 +460,16 @@
             searchInput.style.display = 'block';
             clearBtn.style.display = 'none';
             searchInput.placeholder = isMusic ? "Search music..." : "Search videos...";
-            performSearch(searchInput.value);
+            performSearch(searchInput.value, false);
         } else {
             searchInput.style.display = 'none';
             if (cat === 'history') {
                 clearBtn.style.display = 'block';
-                renderList(historyList);
+                renderList(historyList, false, false);
             } else {
                 clearBtn.style.display = 'none';
                 if (cat === 'my-playlists') loadMyPlaylists();
-                else if (cat === 'favs') renderList(favorites);
+                else if (cat === 'favs') renderList(favorites, false, false);
             }
         }
     }
@@ -406,7 +485,7 @@
     function clearHistory() {
         historyList = [];
         localStorage.setItem('yt_history', JSON.stringify(historyList));
-        renderList(historyList);
+        renderList(historyList, false, false);
     }
 
     async function loadMyPlaylists() {
@@ -416,26 +495,47 @@
         }
         try {
             const res = await gapi.client.youtube.playlists.list({ mine: true, part: 'snippet,contentDetails', maxResults: 50 });
-            renderList(res.result.items, true);
+            renderList(res.result.items, true, false);
         } catch (e) { console.error(e); }
     }
 
-    function handleSearch(e) { if (e.key === 'Enter') performSearch(e.target.value); }
+    function handleSearch(e) { if (e.key === 'Enter') performSearch(e.target.value, false); }
 
-    async function performSearch(query) {
+    async function performSearch(query, isAppend = false) {
+        if (isFetching) return;
+        isFetching = true;
+        
         let params = { 
             q: query || (currentCategory === 'music' ? 'top hits' : 'trending'), 
             part: 'snippet', 
             type: 'video', 
-            maxResults: 25 
+            maxResults: 25,
+            pageToken: nextPageToken || ''
         };
         if (currentCategory === 'music') params.videoCategoryId = '10'; 
 
         try {
             const res = await gapi.client.youtube.search.list(params);
-            activeList = res.result.items;
-            renderList(activeList);
+            const items = res.result.items;
+            nextPageToken = res.result.nextPageToken;
+            
+            if (isAppend) {
+                activeList = activeList.concat(items);
+            } else {
+                activeList = items;
+            }
+            
+            renderList(items, false, isAppend);
         } catch (e) { console.error("Search Error", e); }
+        finally { isFetching = false; }
+    }
+
+    async function loadNextPage() {
+        if (currentPlaylistId) {
+            loadPlaylistVideos(currentPlaylistId, true);
+        } else if (currentCategory === 'music' || currentCategory === 'video') {
+            performSearch(document.getElementById('search-input').value, true);
+        }
     }
 
     function toggleFavorite(item, event) {
@@ -452,7 +552,7 @@
         localStorage.setItem('yt_favorites', JSON.stringify(favorites));
         
         if (currentCategory === 'favs') {
-            renderList(favorites);
+            renderList(favorites, false, false);
         } else {
             const btn = event.currentTarget;
             btn.classList.toggle('is-fav');
@@ -479,18 +579,27 @@
         }
     }
 
-    async function renderList(items, isPlaylist = false) {
+    async function renderList(items, isPlaylist = false, isAppend = false) {
         const container = document.getElementById('content-list');
-        container.innerHTML = '';
-        container.scrollTop = 0;
+        if (!isAppend) {
+            container.innerHTML = '';
+            container.scrollTop = 0;
+        }
         
+        // Remove old anchor
+        const oldAnchor = document.getElementById('scroll-anchor');
+        if (oldAnchor) oldAnchor.remove();
+
         if (!items || items.length === 0) {
-            container.innerHTML = `<div style="padding:40px; opacity:0.5; text-align:center;">${currentCategory === 'history' ? 'History is empty' : 'No items found'}</div>`;
+            if (!isAppend) {
+                container.innerHTML = `<div style="padding:40px; opacity:0.5; text-align:center;">${currentCategory === 'history' ? 'History is empty' : 'No items found'}</div>`;
+            }
             return;
         }
 
+        // Fetch stats for all non-playlist items (including videos inside playlists)
         let statsMap = {};
-        if (!isPlaylist) {
+        if (currentCategory !== 'my-playlists') {
             statsMap = await fetchStatsForItems(items);
         }
 
@@ -506,7 +615,11 @@
             const likeCount = formatNumber(stats.likeCount);
 
             card.onclick = () => { 
-                if (isPlaylist) loadPlaylistVideos(item.id); 
+                if (isPlaylist) {
+                    currentPlaylistId = item.id;
+                    nextPageToken = null;
+                    loadPlaylistVideos(item.id, false); 
+                }
                 else {
                     playItem(vid);
                     addToHistory(item);
@@ -531,24 +644,48 @@
             `;
             container.appendChild(card);
 
-            // Handle the double-text for seamless marquee loop
             const titleEl = card.querySelector('.item-title');
             const wrapperEl = card.querySelector('.title-wrapper');
             if (titleEl.offsetWidth > wrapperEl.offsetWidth) {
                 titleEl.innerHTML += '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' + titleEl.innerHTML;
             } else {
-                // If text fits, don't animate
                 titleEl.style.animation = 'none';
             }
         });
+
+        // Add scroll anchor for virtual scroll
+        if (nextPageToken) {
+            const anchor = document.createElement('div');
+            anchor.id = 'scroll-anchor';
+            anchor.innerHTML = '<span>Loading more...</span>';
+            container.appendChild(anchor);
+            observer.observe(anchor);
+        }
     }
 
-    async function loadPlaylistVideos(playlistId) {
+    async function loadPlaylistVideos(playlistId, isAppend = false) {
+        if (isFetching) return;
+        isFetching = true;
         try {
-            const res = await gapi.client.youtube.playlistItems.list({ playlistId: playlistId, part: 'snippet,contentDetails', maxResults: 50 });
-            activeList = res.result.items;
-            renderList(activeList);
+            const res = await gapi.client.youtube.playlistItems.list({ 
+                playlistId: playlistId, 
+                part: 'snippet,contentDetails', 
+                maxResults: 25,
+                pageToken: nextPageToken || ''
+            });
+            
+            const items = res.result.items;
+            nextPageToken = res.result.nextPageToken;
+            
+            if (isAppend) {
+                activeList = activeList.concat(items);
+            } else {
+                activeList = items;
+            }
+            
+            renderList(items, false, isAppend);
         } catch (e) { console.error(e); }
+        finally { isFetching = false; }
     }
 
     function shuffleCurrentList() {
@@ -559,7 +696,7 @@
             [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
         }
         activeList = shuffled;
-        renderList(activeList);
+        renderList(activeList, false, false);
         const firstVid = activeList[0].id.videoId || activeList[0].id || activeList[0].contentDetails?.videoId;
         playItem(firstVid);
     }
@@ -567,8 +704,8 @@
     function playItem(id) { if (player?.loadVideoById) player.loadVideoById(id); }
 
     function addToHistory(item) {
-        const id = item.id.videoId || item.id;
-        historyList = [item, ...historyList.filter(i => (i.id.videoId || i.id) !== id)].slice(0, 50);
+        const id = item.id.videoId || item.id || item.contentDetails?.videoId;
+        historyList = [item, ...historyList.filter(i => (i.id.videoId || i.id || i.contentDetails?.videoId) !== id)].slice(0, 50);
         localStorage.setItem('yt_history', JSON.stringify(historyList));
     }
 
