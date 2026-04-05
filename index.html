@@ -225,17 +225,6 @@
             align-items: center; 
             gap: 8px;
             white-space: nowrap;
-            width: 100%;
-            overflow: hidden;
-        }
-
-        /* Prevent long channel names from pushing stats off-screen */
-        .channel-name {
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            flex-shrink: 1; /* Allow the name to shrink */
-            min-width: 0;
         }
         
         .stats-badge {
@@ -243,7 +232,6 @@
             align-items: center;
             gap: 3px;
             opacity: 0.8;
-            flex-shrink: 0; /* Never hide the likes/views */
         }
 
         .heart-btn {
@@ -274,9 +262,10 @@
             flex-shrink: 0;
         }
 
+        /* Jump to Top Button Styling - Adjusted bottom position for mobile navigation clearance */
         #jump-to-top {
             position: absolute;
-            bottom: 80px; 
+            bottom: 80px; /* Increased from 20px to clear phone nav bars */
             right: 20px;
             width: 48px;
             height: 48px;
@@ -289,7 +278,7 @@
             align-items: center;
             justify-content: center;
             box-shadow: 0 4px 15px rgba(0,0,0,0.4);
-            z-index: 1000; 
+            z-index: 1000; /* Higher z-index to stay on top */
             font-size: 22px;
             transition: transform 0.2s ease, opacity 0.2s ease, background-color 0.2s ease;
         }
@@ -330,7 +319,7 @@
                 order: -1; 
             }
             #sidebar { width: 100%; flex: 1; height: 65vh; }
-            #jump-to-top { bottom: 80px; } 
+            #jump-to-top { bottom: 80px; } /* Specific mobile spacing */
         }
     </style>
 </head>
@@ -367,6 +356,7 @@
     </div>
     <div id="content-list" onscroll="handleSidebarScroll()"></div>
     
+    <!-- Jump to Top Button -->
     <button id="jump-to-top" onclick="scrollToTop()" title="Jump to Top">
         <span style="transform: translateY(-2px);">↑</span>
     </button>
@@ -392,6 +382,7 @@
     let historyList = JSON.parse(localStorage.getItem('yt_history') || '[]');
     let favorites = JSON.parse(localStorage.getItem('yt_favorites') || '[]');
     
+    // Virtual Scroll State
     let nextPageToken = null;
     let isFetching = false;
     let currentPlaylistId = null;
@@ -438,6 +429,7 @@
         tokenClient.requestAccessToken({prompt: gapi.client.getToken() ? '' : 'consent'});
     }
 
+    // Handle sidebar scroll to show/hide jump button
     function handleSidebarScroll() {
         const list = document.getElementById('content-list');
         const jumpBtn = document.getElementById('jump-to-top');
@@ -448,6 +440,7 @@
         }
     }
 
+    // Smooth scroll to top function
     function scrollToTop() {
         document.getElementById('content-list').scrollTo({
             top: 0,
@@ -643,7 +636,7 @@
                         <div class="item-title">${s.title}</div>
                     </div>
                     <div class="item-meta">
-                        <span class="channel-name">${isPlaylist ? 'Playlist' : s.channelTitle}</span>
+                        <span>${isPlaylist ? 'Playlist' : s.channelTitle}</span>
                         ${!isPlaylist && viewCount !== '0' ? `
                             <span class="stats-badge">👁️ ${viewCount}</span>
                             <span class="stats-badge">👍 ${likeCount}</span>
