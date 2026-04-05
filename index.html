@@ -262,29 +262,33 @@
             flex-shrink: 0;
         }
 
-        /* Jump to Top Button Styling */
+        /* Jump to Top Button Styling - Adjusted bottom position for mobile navigation clearance */
         #jump-to-top {
             position: absolute;
-            bottom: 20px;
+            bottom: 80px; /* Increased from 20px to clear phone nav bars */
             right: 20px;
-            width: 45px;
-            height: 45px;
+            width: 48px;
+            height: 48px;
             background-color: var(--accent-color);
             color: white;
             border: none;
             border-radius: 50%;
             cursor: pointer;
-            display: none; /* Hidden by default */
+            display: none;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            z-index: 100;
-            font-size: 20px;
-            transition: transform 0.2s ease, opacity 0.2s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            z-index: 1000; /* Higher z-index to stay on top */
+            font-size: 22px;
+            transition: transform 0.2s ease, opacity 0.2s ease, background-color 0.2s ease;
         }
 
         #jump-to-top:hover {
             transform: scale(1.1);
+        }
+
+        #jump-to-top:active {
+            transform: scale(0.95);
         }
 
         .modal-overlay {
@@ -292,7 +296,7 @@
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.8);
-            z-index: 200;
+            z-index: 2000;
             align-items: center;
             justify-content: center;
         }
@@ -315,6 +319,7 @@
                 order: -1; 
             }
             #sidebar { width: 100%; flex: 1; height: 65vh; }
+            #jump-to-top { bottom: 80px; } /* Specific mobile spacing */
         }
     </style>
 </head>
@@ -424,7 +429,7 @@
         tokenClient.requestAccessToken({prompt: gapi.client.getToken() ? '' : 'consent'});
     }
 
-    // New: Handle sidebar scroll to show/hide jump button
+    // Handle sidebar scroll to show/hide jump button
     function handleSidebarScroll() {
         const list = document.getElementById('content-list');
         const jumpBtn = document.getElementById('jump-to-top');
@@ -435,7 +440,7 @@
         }
     }
 
-    // New: Smooth scroll to top function
+    // Smooth scroll to top function
     function scrollToTop() {
         document.getElementById('content-list').scrollTo({
             top: 0,
@@ -586,7 +591,6 @@
             container.scrollTop = 0;
         }
         
-        // Remove old anchor
         const oldAnchor = document.getElementById('scroll-anchor');
         if (oldAnchor) oldAnchor.remove();
 
@@ -597,7 +601,6 @@
             return;
         }
 
-        // Fetch stats for all non-playlist items (including videos inside playlists)
         let statsMap = {};
         if (currentCategory !== 'my-playlists') {
             statsMap = await fetchStatsForItems(items);
@@ -653,7 +656,6 @@
             }
         });
 
-        // Add scroll anchor for virtual scroll
         if (nextPageToken) {
             const anchor = document.createElement('div');
             anchor.id = 'scroll-anchor';
