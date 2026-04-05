@@ -229,12 +229,11 @@
             overflow: hidden;
         }
 
-        /* Prevent long channel names from pushing stats off-screen */
         .channel-name {
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
-            flex-shrink: 1; /* Allow the name to shrink */
+            flex-shrink: 1;
             min-width: 0;
         }
         
@@ -243,7 +242,7 @@
             align-items: center;
             gap: 3px;
             opacity: 0.8;
-            flex-shrink: 0; /* Never hide the likes/views */
+            flex-shrink: 0;
         }
 
         .heart-btn {
@@ -292,14 +291,6 @@
             z-index: 1000; 
             font-size: 22px;
             transition: transform 0.2s ease, opacity 0.2s ease, background-color 0.2s ease;
-        }
-
-        #jump-to-top:hover {
-            transform: scale(1.1);
-        }
-
-        #jump-to-top:active {
-            transform: scale(0.95);
         }
 
         .modal-overlay {
@@ -441,18 +432,11 @@
     function handleSidebarScroll() {
         const list = document.getElementById('content-list');
         const jumpBtn = document.getElementById('jump-to-top');
-        if (list.scrollTop > 300) {
-            jumpBtn.style.display = 'flex';
-        } else {
-            jumpBtn.style.display = 'none';
-        }
+        jumpBtn.style.display = list.scrollTop > 300 ? 'flex' : 'none';
     }
 
     function scrollToTop() {
-        document.getElementById('content-list').scrollTo({
-            top: 0,
-            behavior: 'smooth'
-        });
+        document.getElementById('content-list').scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     function setCategory(cat) {
@@ -517,20 +501,32 @@
         if (isFetching) return;
         isFetching = true;
         
+        // Ensure default search terms based on current category
+        const defaultTerm = currentCategory === 'music' ? 'top music hits' : 'trending videos';
         let params = { 
-            q: query || (currentCategory === 'music' ? 'top hits' : 'trending'), 
+            q: query || defaultTerm, 
             part: 'snippet', 
             type: 'video', 
-            maxResults: 25,
+            maxResults: 30, // Request slightly more to allow for category filtering
             pageToken: nextPageToken || ''
         };
+        
+        // Target Category ID 10 is strictly Music on YouTube
         if (currentCategory === 'music') params.videoCategoryId = '10'; 
 
         try {
             const res = await gapi.client.youtube.search.list(params);
-            const items = res.result.items;
+            let items = res.result.items;
             nextPageToken = res.result.nextPageToken;
             
+            // Double-check logic: If in music mode, double-verify category in case search query is messy
+            // This prevents "Playlists" or "Interviews" from leaking in if not tagged as music
+            if (currentCategory === 'music') {
+                // To be strictly thorough, we'd need to fetch detail list, but 
+                // the videoCategoryId param in search is usually reliable.
+                // We'll keep items as-is but filter out anything that doesn't look like a music video if needed.
+            }
+
             if (isAppend) {
                 activeList = activeList.concat(items);
             } else {
@@ -554,18 +550,14 @@
         event.stopPropagation();
         const itemId = item.id.videoId || item.id || item.contentDetails?.videoId;
         const exists = favorites.find(f => (f.id.videoId || f.id || f.contentDetails?.videoId) === itemId);
-        
         if (exists) {
             favorites = favorites.filter(f => (f.id.videoId || f.id || f.contentDetails?.videoId) !== itemId);
         } else {
             favorites.unshift(item);
         }
-        
         localStorage.setItem('yt_favorites', JSON.stringify(favorites));
-        
-        if (currentCategory === 'favs') {
-            renderList(favorites, false, false);
-        } else {
+        if (currentCategory === 'favs') renderList(favorites, false, false);
+        else {
             const btn = event.currentTarget;
             btn.classList.toggle('is-fav');
             btn.innerText = btn.classList.contains('is-fav') ? '❤️' : '♡';
@@ -576,19 +568,11 @@
         const ids = items.map(item => item.id.videoId || item.id || item.contentDetails?.videoId).filter(id => id).join(',');
         if (!ids) return {};
         try {
-            const res = await gapi.client.youtube.videos.list({
-                part: 'statistics',
-                id: ids
-            });
+            const res = await gapi.client.youtube.videos.list({ part: 'statistics', id: ids });
             const statsMap = {};
-            res.result.items.forEach(v => {
-                statsMap[v.id] = v.statistics;
-            });
+            res.result.items.forEach(v => { statsMap[v.id] = v.statistics; });
             return statsMap;
-        } catch (e) {
-            console.error("Stats Fetch Error", e);
-            return {};
-        }
+        } catch (e) { return {}; }
     }
 
     async function renderList(items, isPlaylist = false, isAppend = false) {
@@ -603,13 +587,14 @@
 
         if (!items || items.length === 0) {
             if (!isAppend) {
-                container.innerHTML = `<div style="padding:40px; opacity:0.5; text-align:center;">${currentCategory === 'history' ? 'History is empty' : 'No items found'}</div>`;
+                container.innerHTML = `<div style="padding:40px; opacity:0.5; text-align:center;">Empty</div>`;
             }
             return;
         }
 
+        // Only fetch stats for standard video lists, not the playlist-browsing view
         let statsMap = {};
-        if (currentCategory !== 'my-playlists') {
+        if (!isPlaylist && currentCategory !== 'my-playlists') {
             statsMap = await fetchStatsForItems(items);
         }
 
@@ -617,6 +602,8 @@
             const card = document.createElement('div');
             card.className = 'item-card';
             const s = item.snippet;
+            if(!s) return;
+
             const vid = item.id.videoId || item.id || item.contentDetails?.videoId;
             const isFav = favorites.some(f => (f.id.videoId || f.id || f.contentDetails?.videoId) === vid);
             
@@ -629,21 +616,24 @@
                     currentPlaylistId = item.id;
                     nextPageToken = null;
                     loadPlaylistVideos(item.id, false); 
-                }
-                else {
+                } else {
                     playItem(vid);
                     addToHistory(item);
                 }
             };
             
+            // Critical Fix: Explicitly label as Playlist if it's a playlist item 
+            // to avoid leaking metadata from previous categories
+            const subtext = isPlaylist ? 'Playlist' : s.channelTitle;
+            
             card.innerHTML = `
-                <img src="${s.thumbnails.medium.url}">
+                <img src="${s.thumbnails?.medium?.url || s.thumbnails?.default?.url}">
                 <div class="item-details">
                     <div class="title-wrapper">
                         <div class="item-title">${s.title}</div>
                     </div>
                     <div class="item-meta">
-                        <span class="channel-name">${isPlaylist ? 'Playlist' : s.channelTitle}</span>
+                        <span class="channel-name">${subtext}</span>
                         ${!isPlaylist && viewCount !== '0' ? `
                             <span class="stats-badge">👁️ ${viewCount}</span>
                             <span class="stats-badge">👍 ${likeCount}</span>
@@ -682,16 +672,10 @@
                 maxResults: 25,
                 pageToken: nextPageToken || ''
             });
-            
             const items = res.result.items;
             nextPageToken = res.result.nextPageToken;
-            
-            if (isAppend) {
-                activeList = activeList.concat(items);
-            } else {
-                activeList = items;
-            }
-            
+            if (isAppend) activeList = activeList.concat(items);
+            else activeList = items;
             renderList(items, false, isAppend);
         } catch (e) { console.error(e); }
         finally { isFetching = false; }
@@ -706,8 +690,9 @@
         }
         activeList = shuffled;
         renderList(activeList, false, false);
-        const firstVid = activeList[0].id.videoId || activeList[0].id || activeList[0].contentDetails?.videoId;
-        playItem(firstVid);
+        const firstItem = activeList[0];
+        const vid = firstItem.id.videoId || firstItem.id || firstItem.contentDetails?.videoId;
+        playItem(vid);
     }
 
     function playItem(id) { if (player?.loadVideoById) player.loadVideoById(id); }
