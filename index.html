@@ -36,7 +36,6 @@
             color: var(--text-color);
             display: flex;
             height: 100vh;
-            height: -webkit-fill-available;
             overflow: hidden;
             transition: background 0.3s ease;
         }
@@ -58,7 +57,6 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .header {
@@ -98,13 +96,11 @@
             color: var(--text-color);
             padding: 5px;
         }
-        .icon-btn:hover { opacity: 1; }
 
         .tabs-container {
             overflow-x: auto;
             white-space: nowrap;
             scrollbar-width: none;
-            -ms-overflow-style: none;
             flex-shrink: 0;
         }
         .tabs-container::-webkit-scrollbar { display: none; }
@@ -126,7 +122,6 @@
             font-size: 11px;
             font-weight: 700;
             text-transform: uppercase;
-            transition: 0.2s;
             color: var(--secondary-text);
         }
 
@@ -141,7 +136,6 @@
             border: 1px solid rgba(0,0,0,0.1);
             background: var(--bg-color);
             color: var(--text-color);
-            box-sizing: border-box;
             outline: none;
         }
 
@@ -154,20 +148,17 @@
             font-size: 12px;
             font-weight: 600;
             cursor: pointer;
-            white-space: nowrap;
             display: none;
         }
-        .clear-btn:hover { background: rgba(255, 0, 0, 0.2); }
 
         #content-list {
             flex: 1;
             overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
+            overflow-x: hidden;
             padding: 10px;
             display: flex;
             flex-direction: column;
-            gap: 10px;
-            overscroll-behavior-y: contain;
+            gap: 8px;
         }
 
         .item-card {
@@ -178,8 +169,8 @@
             border-radius: 10px;
             cursor: pointer;
             align-items: center;
-            flex-shrink: 0;
             position: relative;
+            flex-shrink: 0; /* Ensures cards don't squash */
         }
         .item-card:hover { background: var(--item-hover); }
 
@@ -191,9 +182,50 @@
             flex-shrink: 0;
         }
 
-        .item-details { flex-grow: 1; overflow: hidden; padding-right: 40px; }
-        .item-title { font-size: 13px; font-weight: 600; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .item-meta { font-size: 11px; color: var(--secondary-text); margin-top: 4px; display: flex; align-items: center; gap: 8px; }
+        .item-details { 
+            flex-grow: 1; 
+            overflow: hidden; 
+            padding-right: 35px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Horizontal Scroll Title Logic */
+        .title-wrapper {
+            width: 100%;
+            overflow: hidden;
+            white-space: nowrap;
+            position: relative;
+        }
+
+        .item-title { 
+            display: inline-block;
+            font-size: 13px; 
+            font-weight: 600; 
+            line-height: 1.2;
+        }
+
+        /* Animation trigger on card hover/active */
+        .item-card:hover .item-title, 
+        .item-card:active .item-title {
+            animation: scroll-text 5s linear infinite;
+            padding-right: 50px; /* Gap for seamless loop */
+        }
+
+        @keyframes scroll-text {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+
+        .item-meta { 
+            font-size: 11px; 
+            color: var(--secondary-text); 
+            margin-top: 4px; 
+            display: flex; 
+            align-items: center; 
+            gap: 8px;
+            white-space: nowrap;
+        }
         
         .stats-badge {
             display: flex;
@@ -211,12 +243,9 @@
             border: none;
             cursor: pointer;
             font-size: 18px;
-            padding: 5px;
             color: #ccc;
-            transition: scale 0.2s;
             z-index: 5;
         }
-        .heart-btn:active { scale: 1.3; }
         .heart-btn.is-fav { color: #ff4444; }
 
         #video-container { width: 100%; height: 100%; }
@@ -386,7 +415,7 @@
             return;
         }
         try {
-            const res = await gapi.client.youtube.playlists.list({ mine: true, part: 'snippet', maxResults: 50 });
+            const res = await gapi.client.youtube.playlists.list({ mine: true, part: 'snippet,contentDetails', maxResults: 50 });
             renderList(res.result.items, true);
         } catch (e) { console.error(e); }
     }
@@ -460,7 +489,6 @@
             return;
         }
 
-        // Fetch stats if not a playlist list
         let statsMap = {};
         if (!isPlaylist) {
             statsMap = await fetchStatsForItems(items);
@@ -488,7 +516,9 @@
             card.innerHTML = `
                 <img src="${s.thumbnails.medium.url}">
                 <div class="item-details">
-                    <div class="item-title">${s.title}</div>
+                    <div class="title-wrapper">
+                        <div class="item-title">${s.title}</div>
+                    </div>
                     <div class="item-meta">
                         <span>${isPlaylist ? 'Playlist' : s.channelTitle}</span>
                         ${!isPlaylist && viewCount !== '0' ? `
@@ -500,6 +530,16 @@
                 ${!isPlaylist ? `<button class="heart-btn ${isFav ? 'is-fav' : ''}" onclick="toggleFavorite(${JSON.stringify(item).replace(/"/g, '&quot;')}, event)">${isFav ? '❤️' : '♡'}</button>` : ''}
             `;
             container.appendChild(card);
+
+            // Handle the double-text for seamless marquee loop
+            const titleEl = card.querySelector('.item-title');
+            const wrapperEl = card.querySelector('.title-wrapper');
+            if (titleEl.offsetWidth > wrapperEl.offsetWidth) {
+                titleEl.innerHTML += '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' + titleEl.innerHTML;
+            } else {
+                // If text fits, don't animate
+                titleEl.style.animation = 'none';
+            }
         });
     }
 
